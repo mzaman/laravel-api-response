@@ -1,6 +1,6 @@
 <?php
 
-namespace mzaman\LaravelApiResponse\Exceptions;
+namespace MasudZaman\LaravelApiResponse\Exceptions;
 
 use Exception;
 
@@ -22,7 +22,7 @@ abstract class ApiException extends Exception
 
     public function render($request)
     {
-        return response()->json(new \mzaman\LaravelApiResponse\Http\Resources\BaseResponse([
+        return response()->json(new \MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse([
             'status' => $this->status,
             'httpStatus' => $this->httpStatus,
             'success' => false,

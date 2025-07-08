@@ -1,9 +1,9 @@
 <?php
 
-namespace mzaman\LaravelApiResponse\Http\Resources;
+namespace MasudZaman\LaravelApiResponse\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use mzaman\LaravelApiResponse\Constants\HttpStatusCode;
+use MasudZaman\LaravelApiResponse\Constants\HttpStatusCode;
 
 /**
  * Base Response Class

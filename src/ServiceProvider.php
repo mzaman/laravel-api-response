@@ -1,6 +1,6 @@
 <?php
 
-namespace mzaman\LaravelApiResponse;
+namespace MasudZaman\LaravelApiResponse;
 
 use Illuminate\Support\ServiceProvider;
 

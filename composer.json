@@ -1,0 +1,23 @@
+{
+    "name": "mzaman/laravel-api-response",
+    "description": "A flexible and scalable API response handling package for Laravel",
+    "autoload": {
+        "psr-4": {
+            "MasudZaman\\LaravelApiResponse\\": "src/"
+        },
+        "files": [
+            "src/Helpers/helper.php"
+        ]
+    },
+    "require": {
+        "php": "^7.3",
+        "illuminate/support": "^8.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MasudZaman\\LaravelApiResponse\\LaravelApiResponseServiceProvider"
+            ]
+        }
+    }
+}

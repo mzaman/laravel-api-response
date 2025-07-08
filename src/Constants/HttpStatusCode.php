@@ -1,6 +1,6 @@
 <?php
 
-namespace mzaman\LaravelApiResponse\Constants;
+namespace MasudZaman\LaravelApiResponse\Constants;
 
 /**
  * HTTP Status Codes and API-related status codes
