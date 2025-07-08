@@ -3,72 +3,80 @@
 namespace MasudZaman\LaravelApiResponse\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use MasudZaman\LaravelApiResponse\Constants\HttpStatusCode;
+use MasudZaman\LaravelApiResponse\Constants\ApiCode;
+use MasudZaman\LaravelApiResponse\Constants\ApiMessage;
 
 /**
- * Base Response Class
- *
- * This is the standard structure for all API responses, including support for success, locale, error handling, and metadata.
+ * Base Response Class for structured API responses
  */
 abstract class BaseResponse extends JsonResource
 {
-    protected $status;       // API-specific status (e.g., API_SUCCESS)
-    protected $httpStatus;   // HTTP Status (e.g., 200)
-    protected $success;      // Success flag
-    protected $message;      // Custom message
-    protected $data;         // Data payload
-    protected $errors;       // Errors array
-    protected $meta;         // Meta information (e.g., pagination)
-    protected $locale;       // Locale information (for i18n support)
+    protected $status;   // Response status ('success', 'error')
+    protected $code;     // HTTP Status Code (e.g., 200)
+    protected $message;  // Response message
+    protected $data;     // Response data (if applicable)
+    protected $errors;   // Errors (if applicable)
+    protected $meta;     // Meta information (e.g., pagination)
+    protected $locale;   // Locale for internationalization
 
-    /**
-     * BaseResponse constructor.
-     * @param array $resource
-     */
     public function __construct($resource)
     {
         parent::__construct($resource);
 
-        // Assign properties, with defaults
-        $this->status = $resource['status'] ?? HttpStatusCode::API_SUCCESS;  // Default to API_SUCCESS
-        $this->httpStatus = $resource['httpStatus'] ?? HttpStatusCode::OK;    // Default to HTTP OK
-        $this->success = $resource['success'] ?? true;
-        $this->message = $resource['message'] ?? HttpStatusCode::SUCCESS_MESSAGE;
+        // Initialize values, fall back to defaults if not set
+        $this->status = $resource['status'] ?? 'success';
+        $this->code = $resource['code'] ?? ApiCode::OK;
+        $this->message = $resource['message'] ?? trans('messages.' . $this->getMessageKey($this->code));
         $this->data = $resource['data'] ?? null;
         $this->errors = $resource['errors'] ?? null;
         $this->meta = $resource['meta'] ?? null;
         $this->locale = $resource['locale'] ?? null;
     }
 
-    /**
-     * Format the response to an array.
-     * This includes status, message, data, errors, etc.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return array
-     */
     public function toArray($request)
     {
-        // Basic response structure
         $response = [
             'status' => $this->status,
-            'httpStatus' => $this->httpStatus,
-            'success' => $this->success,
+            'code' => $this->code,
             'message' => $this->message,
-            'errors' => $this->errors,
             'data' => $this->data,
+            'errors' => $this->errors,
         ];
 
-        // Include meta information if available (pagination, etc.)
         if ($this->meta) {
-            $response['meta'] = $this->meta;
+            $response['meta'] = $this->meta; // Add pagination or additional meta data
         }
 
-        // Include locale information if available
         if ($this->locale) {
-            $response['locale'] = $this->locale;
+            $response['locale'] = $this->locale; // Localization support
         }
 
         return $response;
+    }
+
+    private function getMessageKey($code)
+    {
+        switch ($code) {
+            case ApiCode::CREATED:
+                return 'created_success';
+            case ApiCode::BAD_REQUEST:
+                return 'bad_request';
+            case ApiCode::UNAUTHORIZED:
+                return 'unauthorized';
+            case ApiCode::FORBIDDEN:
+                return 'forbidden';
+            case ApiCode::NOT_FOUND:
+                return 'not_found';
+            case ApiCode::INTERNAL_SERVER_ERROR:
+                return 'internal_server_error';
+            case ApiCode::SERVICE_UNAVAILABLE:
+                return 'service_unavailable';
+            case ApiCode::CONFLICT:
+                return 'conflict';
+            case ApiCode::TOO_MANY_REQUESTS:
+                return 'rate_limit_exceeded';
+            default:
+                return 'success';
+        }
     }
 }

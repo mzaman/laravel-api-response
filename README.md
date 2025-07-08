@@ -17,25 +17,25 @@ You can use helper functions to generate API responses:
 ### Success Response
 
 ```php
-return api_response(['data' => 'Some data'], 1000, 200, 'Data fetched successfully');
+return api_response(['data' => 'Some data'], 'success', 200, 'Data fetched successfully');
 ```
 
 ### Error Response
 
 ```php
-return api_error('An error occurred', 1006, 500, ['error' => 'Details of error']);
+return api_error('An error occurred', 'error', 500, ['error' => 'Details of error']);
 ```
 
 ## Exception Handling
 
-The package supports custom exceptions. You can throw an `ApiException` and it will automatically be caught and formatted.
+The package supports custom exceptions. You can throw an `ApiResponseException` and it will automatically be caught and formatted.
 
-## Locale Support
+## Localization
 
 You can set a locale for each response:
 
 ```php
-return api_response(['data' => 'Some data'], 1000, 200, 'Success', null, 'en');
+return api_response(['data' => 'Some data'], 'success', 200, 'Success', null, 'en');
 ```
 
 ### License
