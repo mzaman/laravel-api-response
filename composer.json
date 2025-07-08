@@ -1,6 +1,15 @@
 {
     "name": "mzaman/laravel-api-response",
     "description": "A flexible and scalable API response handling package for Laravel",
+    "version": "1.0.0",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "api",
+        "response",
+        "json",
+        "rest"
+    ],
     "autoload": {
         "psr-4": {
             "MasudZaman\\LaravelApiResponse\\": "src/"
@@ -10,7 +19,7 @@
         ]
     },
     "require": {
-        "php": "^7.3",
+        "php": "^7.3|^8.0|^8.1|^8.2|^8.3|^8.4",
         "illuminate/support": "^8.0"
     },
     "extra": {
