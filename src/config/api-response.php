@@ -14,5 +14,6 @@ return [
         'validation_failed' => 'Validation failed',
         'conflict' => 'Conflict detected',
         'rate_limit_exceeded' => 'Rate limit exceeded',
+        'invalid_token' => 'The provided token is invalid or expired',
     ],
 ];

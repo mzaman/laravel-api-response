@@ -1,27 +1,32 @@
 <?php
 
 if (!function_exists('api_response')) {
-    function api_response($data = [], $status = 'success', $code = 200, $message = '', $meta = null, $locale = null)
+    /**
+     * Helper function to send a success response
+     *
+     * @param mixed $data
+     * @param int $statusCode
+     * @param string $message
+     * @param array|null $meta
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function api_response($data = [], $message = 'Request was successful', $statusCode = 200, $meta = null)
     {
-        return response()->json(new \MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse([
-            'status' => $status,
-            'code' => $code,
-            'message' => $message ?: trans('messages.' . $status),
-            'data' => $data,
-            'meta' => $meta,
-            'locale' => $locale,
-        ]), $code);
+        return app('api-response')->success($data, $statusCode, $message, $meta);
     }
 }
 
 if (!function_exists('api_error')) {
-    function api_error($message = 'Something went wrong', $status = 'error', $code = 500, $errors = null)
+    /**
+     * Helper function to send an error response
+     *
+     * @param int $statusCode
+     * @param string $message
+     * @param array|null $errors
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function api_error($message = 'Something went wrong', $statusCode = 500, $errors = [])
     {
-        return response()->json(new \MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse([
-            'status' => $status,
-            'code' => $code,
-            'message' => $message,
-            'errors' => $errors,
-        ]), $code);
+        return app('api-response')->error($statusCode, $message, $errors);
     }
 }

@@ -4,12 +4,11 @@ namespace MasudZaman\LaravelApiResponse\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use MasudZaman\LaravelApiResponse\Constants\ApiCode;
-use MasudZaman\LaravelApiResponse\Constants\ApiMessage;
 
 /**
  * Base Response Class for structured API responses
  */
-abstract class BaseResponse extends JsonResource
+class BaseResponse extends JsonResource
 {
     protected $status;   // Response status ('success', 'error')
     protected $code;     // HTTP Status Code (e.g., 200)
@@ -23,60 +22,55 @@ abstract class BaseResponse extends JsonResource
     {
         parent::__construct($resource);
 
-        // Initialize values, fall back to defaults if not set
         $this->status = $resource['status'] ?? 'success';
-        $this->code = $resource['code'] ?? ApiCode::OK;
-        $this->message = $resource['message'] ?? trans('messages.' . $this->getMessageKey($this->code));
+        $this->code = $resource['code'] ?? ApiCode::OK; // Default to OK (200)
+        $this->message = $resource['message'] ?? $this->getMessageByCode($this->code);
         $this->data = $resource['data'] ?? null;
         $this->errors = $resource['errors'] ?? null;
         $this->meta = $resource['meta'] ?? null;
-        $this->locale = $resource['locale'] ?? null;
+        $this->locale = $resource['locale'] ?? config('api-response.default_locale', 'en');
     }
 
     public function toArray($request)
     {
-        $response = [
+        return [
             'status' => $this->status,
             'code' => $this->code,
             'message' => $this->message,
             'data' => $this->data,
             'errors' => $this->errors,
+            'meta' => $this->meta,
+            'locale' => $this->locale,
         ];
-
-        if ($this->meta) {
-            $response['meta'] = $this->meta; // Add pagination or additional meta data
-        }
-
-        if ($this->locale) {
-            $response['locale'] = $this->locale; // Localization support
-        }
-
-        return $response;
     }
 
-    private function getMessageKey($code)
+    private function getMessageByCode($code)
     {
+        $messages = config('api-response.messages', []);
+        
         switch ($code) {
+            case ApiCode::OK:
+                return $messages['success'];
             case ApiCode::CREATED:
-                return 'created_success';
+                return $messages['created_success'];
             case ApiCode::BAD_REQUEST:
-                return 'bad_request';
+                return $messages['bad_request'];
             case ApiCode::UNAUTHORIZED:
-                return 'unauthorized';
+                return $messages['unauthorized'];
             case ApiCode::FORBIDDEN:
-                return 'forbidden';
+                return $messages['forbidden'];
             case ApiCode::NOT_FOUND:
-                return 'not_found';
+                return $messages['not_found'];
             case ApiCode::INTERNAL_SERVER_ERROR:
-                return 'internal_server_error';
+                return $messages['internal_server_error'];
             case ApiCode::SERVICE_UNAVAILABLE:
-                return 'service_unavailable';
+                return $messages['service_unavailable'];
             case ApiCode::CONFLICT:
-                return 'conflict';
+                return $messages['conflict'];
             case ApiCode::TOO_MANY_REQUESTS:
-                return 'rate_limit_exceeded';
+                return $messages['rate_limit_exceeded'];
             default:
-                return 'success';
+                return $messages[$code] ?? 'An unexpected error occurred';
         }
     }
 }
