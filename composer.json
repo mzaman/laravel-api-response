@@ -1,7 +1,7 @@
 {
     "name": "mzaman/laravel-api-response",
     "description": "A flexible and scalable API response handling package for Laravel",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "library",
     "keywords": [
         "laravel",
@@ -25,8 +25,11 @@
     "extra": {
         "laravel": {
             "providers": [
-                "MasudZaman\\LaravelApiResponse\\LaravelApiResponseServiceProvider"
-            ]
+                "MasudZaman\\LaravelApiResponse\\Providers\\LaravelApiResponseServiceProvider"
+            ],
+            "aliases": {
+                "ApiResponse": "MasudZaman\\LaravelApiResponse\\Facades\\ApiResponse"
+            }
         }
     }
 }

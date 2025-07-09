@@ -1,30 +1,30 @@
-<?php
 
 namespace MasudZaman\LaravelApiResponse\Exceptions;
 
 use Exception;
+use Illuminate\Http\JsonResponse;
 
-/**
- * ApiResponseException handles custom API errors
- */
 class ApiResponseException extends Exception
 {
-    protected $status;
-    protected $code;
+    protected $statusCode;
 
-    public function __construct($message, $status, $code)
+    public function __construct($message = 'Error occurred', $code = 500)
     {
-        $this->status = $status;
-        $this->code = $code;
-        parent::__construct($message);
+        parent::__construct($message, $code);
+        $this->statusCode = $code;
     }
 
-    public function render($request)
+    /**
+     * Customize the response to be returned.
+     *
+     * @return JsonResponse
+     */
+    public function render()
     {
         return response()->json([
-            'status' => $this->status,
-            'code' => $this->code,
+            'status' => 'error',
+            'code' => $this->statusCode,
             'message' => $this->getMessage(),
-        ], $this->code);
+        ], $this->statusCode);
     }
 }
