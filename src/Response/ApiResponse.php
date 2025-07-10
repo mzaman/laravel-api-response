@@ -255,4 +255,30 @@ class ApiResponse
     {
         return $this->sendError($message, Response::HTTP_SERVICE_UNAVAILABLE, $errors, $headers);
     }
+
+    /**
+     * Send a not acceptable response (406)
+     *
+     * @param string|null $message
+     * @param array|null $errors
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function notAcceptable($message = null, $errors = [], $headers = [])
+    {
+        return $this->sendError($message, Response::HTTP_NOT_ACCEPTABLE, $errors, $headers);
+    }
+
+    /**
+     * Send a conflict response (409)
+     *
+     * @param string|null $message
+     * @param array|null $errors
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function conflict($message = null, $errors = [], $headers = [])
+    {
+        return $this->sendError($message, Response::HTTP_CONFLICT, $errors, $headers);
+    }
 }
