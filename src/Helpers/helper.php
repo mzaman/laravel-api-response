@@ -1,215 +1,230 @@
 <?php
 
-if (!function_exists('api_response')) {
+if (!function_exists('apiResponse')) {
     /**
      * Helper function to send a success response
      *
      * @param mixed $data
-     * @param int $statusCode
-     * @param string $message
+     * @param int $code
+     * @param string|null $message
      * @param array|null $meta
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function api_response($data = [], $message = 'Request was successful', $statusCode = 200, $meta = null)
+    function apiResponse($data = [], $message = null, $code = Response::HTTP_OK, $meta = null, $headers = [])
     {
-        return app('api-response')->success($data, $statusCode, $message, $meta);
+        return app('api-response')->success($data, $code, $message, $meta, $headers);
     }
 }
 
-if (!function_exists('api_error')) {
+if (!function_exists('errorResponse')) {
     /**
      * Helper function to send an error response
      *
-     * @param int $statusCode
-     * @param string $message
+     * @param int $code
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function api_error($message = 'Something went wrong', $statusCode = 500, $errors = [])
+    function errorResponse($message = null, $code = Response::HTTP_INTERNAL_SERVER_ERROR, $errors = [], $headers = [])
     {
-        return app('api-response')->error($statusCode, $message, $errors);
+        return app('api-response')->error($code, $message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_success')) {
+if (!function_exists('successResponse')) {
     /**
      * Helper function to send a basic success response (200)
      *
      * @param mixed $data
-     * @param string $message
+     * @param string|null $message
      * @param array|null $meta
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_success($data = [], $message = 'Request was successful', $meta = null)
+    function successResponse($data = [], $message = null, $meta = null, $headers = [])
     {
-        return app('api-response')->response_success($data, $message, $meta);
+        return app('api-response')->success($data, Response::HTTP_OK, $message, $meta, $headers);
     }
 }
 
-if (!function_exists('response_created')) {
+if (!function_exists('createdResponse')) {
     /**
      * Helper function to send a resource created response (201)
      *
      * @param mixed $data
-     * @param string $message
+     * @param string|null $message
      * @param array|null $meta
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_created($data = [], $message = 'Resource created successfully', $meta = null)
+    function createdResponse($data = [], $message = null, $meta = null, $headers = [])
     {
-        return app('api-response')->response_created($data, $message, $meta);
+        return app('api-response')->created($data, $message, $meta, $headers);
     }
 }
 
-if (!function_exists('response_accepted')) {
+if (!function_exists('acceptedResponse')) {
     /**
      * Helper function to send an accepted response (202)
      *
      * @param mixed $data
-     * @param string $message
+     * @param string|null $message
      * @param array|null $meta
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_accepted($data = [], $message = 'Request accepted for processing', $meta = null)
+    function acceptedResponse($data = [], $message = null, $meta = null, $headers = [])
     {
-        return app('api-response')->response_accepted($data, $message, $meta);
+        return app('api-response')->accepted($data, $message, $meta, $headers);
     }
 }
 
-if (!function_exists('response_no_content')) {
+if (!function_exists('noContentResponse')) {
     /**
      * Helper function to send a no content response (204)
      *
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_no_content()
+    function noContentResponse($headers = [])
     {
-        return app('api-response')->response_no_content();
+        return app('api-response')->noContent($headers);
     }
 }
 
-if (!function_exists('response_error')) {
+if (!function_exists('errorResponse')) {
     /**
      * Helper function to send a server error response (500)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_error($message = 'Internal Server Error', $errors = null)
+    function errorResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_error($message, $errors);
+        return app('api-response')->error(Response::HTTP_INTERNAL_SERVER_ERROR, $message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_unavailable')) {
+if (!function_exists('unavailableResponse')) {
     /**
      * Helper function to send service unavailable response (503)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_unavailable($message = 'Service temporarily unavailable', $errors = null)
+    function unavailableResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_unavailable($message, $errors);
+        return app('api-response')->serviceUnavailable($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_maintenance')) {
+if (!function_exists('maintenanceResponse')) {
     /**
      * Helper function to send maintenance mode response (503)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_maintenance($message = 'Service under maintenance', $errors = null)
+    function maintenanceResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_maintenance($message, $errors);
+        return app('api-response')->serviceUnavailable($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_fail')) {
+if (!function_exists('failResponse')) {
     /**
      * Helper function to send a bad request response (400)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_fail($message = 'Bad Request', $errors = null)
+    function failResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_fail($message, $errors);
+        return app('api-response')->badRequest($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_unauthorized')) {
+if (!function_exists('unauthorizedResponse')) {
     /**
      * Helper function to send an unauthorized response (401)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_unauthorized($message = 'Unauthorized', $errors = null)
+    function unauthorizedResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_unauthorized($message, $errors);
+        return app('api-response')->unauthorized($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_forbidden')) {
+if (!function_exists('forbiddenResponse')) {
     /**
      * Helper function to send a forbidden response (403)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_forbidden($message = 'Forbidden', $errors = null)
+    function forbiddenResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_forbidden($message, $errors);
+        return app('api-response')->forbidden($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_not_found')) {
+if (!function_exists('notFoundResponse')) {
     /**
      * Helper function to send a not found response (404)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_not_found($message = 'Not Found', $errors = null)
+    function notFoundResponse($message = null, $errors = null, $headers = [])
     {
-        return app('api-response')->response_not_found($message, $errors);
+        return app('api-response')->notFound($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_validation')) {
+if (!function_exists('validationErrorResponse')) {
     /**
      * Helper function to send a validation error response (422)
      *
-     * @param string $message
-     * @param array $errors
+     * @param string|null $message
+     * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_validation($message = 'Validation Error', $errors = [])
+    function validationErrorResponse($message = null, $errors = [], $headers = [])
     {
-        return app('api-response')->response_validation($message, $errors);
+        return app('api-response')->validationError($message, $errors, $headers);
     }
 }
 
-if (!function_exists('response_too_many_requests')) {
+if (!function_exists('manyRequestsResponse')) {
     /**
      * Helper function to send a too many requests response (429)
      *
-     * @param string $message
+     * @param string|null $message
      * @param array|null $errors
+     * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function response_too_many_requests($message = 'Too Many Requests', $errors = null)
+    function manyRequestsResponse($message = null, $errors = [], $headers = [])
     {
-        return app('api-response')->response_too_many_requests($message, $errors);
+        return app('api-response')->tooManyRequests($message, $errors, $headers);
     }
 }

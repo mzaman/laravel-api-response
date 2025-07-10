@@ -21,6 +21,7 @@ class ApiResponse
      */
     public function success($data = [], $code = Response::HTTP_OK, $message = null, $meta = null, $headers = [])
     {
+        // Set default message if not provided
         $message = $message ?: HttpResponse::getMessage($code);
 
         return response()->json(new BaseResponse([
@@ -59,6 +60,7 @@ class ApiResponse
      */
     public function error($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
     {
+        // Set default message if not provided
         $message = $message ?: HttpResponse::getMessage($code);
 
         return response()->json(new BaseResponse([
@@ -252,7 +254,7 @@ class ApiResponse
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    public function tooManyRequests($message = null, $errors = [], $headers = [])
+    public function manyRequests($message = null, $errors = [], $headers = [])
     {
         return $this->sendError($message, Response::HTTP_TOO_MANY_REQUESTS, $errors, $headers);
     }
