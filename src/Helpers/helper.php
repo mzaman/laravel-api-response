@@ -23,8 +23,8 @@ if (!function_exists('errorResponse')) {
     /**
      * Helper function to send an error response
      *
-     * @param int $code
      * @param string|null $message
+     * @param int $code
      * @param array|null $errors
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
@@ -228,5 +228,36 @@ if (!function_exists('manyRequestsResponse')) {
     function manyRequestsResponse($message = null, $errors = [], $headers = [])
     {
         return app('api-response')->tooManyRequests($message, $errors, $headers);
+    }
+}
+
+if (!function_exists('updatedResponse')) {
+    /**
+     * Helper function to send an updated response (200)
+     *
+     * @param mixed $data
+     * @param string|null $message
+     * @param array|null $meta
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function updatedResponse($data = [], $message = null, $meta = null, $headers = [])
+    {
+        return app('api-response')->updated($data, $message, $meta, $headers);
+    }
+}
+
+if (!function_exists('deletedResponse')) {
+    /**
+     * Helper function to send a deleted response (200)
+     *
+     * @param string|null $message
+     * @param array|null $meta
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function deletedResponse($message = null, $meta = null, $headers = [])
+    {
+        return app('api-response')->deleted($message, $meta, $headers);
     }
 }
