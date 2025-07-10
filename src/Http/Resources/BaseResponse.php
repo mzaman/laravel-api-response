@@ -28,7 +28,7 @@ class BaseResponse extends JsonResource
         $this->data = $resource['data'] ?? null;
         $this->errors = $resource['errors'] ?? null;
         $this->meta = $resource['meta'] ?? null;
-        $this->locale = $resource['locale'] ?? config('api-response.default_locale', 'en');
+        $this->locale = $resource['locale'] ?? app()->getLocale();
     }
 
     public function toArray($request)

@@ -232,7 +232,7 @@ if (! function_exists('validation_exception')) {
             'data' => null,
             'errors' => $errors,
             'meta' => null,
-            // 'locale' => app()->getLocale(),
+            'locale' => app()->getLocale(),
         ];
 
         // Return the custom ValidationException with structured response
