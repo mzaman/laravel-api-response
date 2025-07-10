@@ -39,7 +39,7 @@ class ApiExceptionHandler extends ExceptionHandler
         $errorResponse = [
             'success' => false,  // Indicating the request was not successful
             'status' => 'error',  // Generic error status
-            'code' => 500,  // Default error code for unknown exceptions
+            'code' => Response::HTTP_INTERNAL_SERVER_ERROR,  // Default error code for unknown exceptions
             'message' => $this->getErrorMessage($exception),  // General error message
             'data' => null,  // No additional data for errors
             'errors' => [  // Specific error details
