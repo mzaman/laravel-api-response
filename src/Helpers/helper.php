@@ -226,6 +226,7 @@ if (! function_exists('validation_exception')) {
     function validation_exception($message, $code = 400, $errors = [])
     {
         $errorResponse = [
+            'success' => false,
             'status' => 'error',
             'code' => $code,
             'message' => $message,

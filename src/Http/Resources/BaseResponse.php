@@ -10,18 +10,20 @@ use MasudZaman\LaravelApiResponse\Constants\ApiCode;
  */
 class BaseResponse extends JsonResource
 {
-    protected $status;   // Response status ('success', 'error')
-    protected $code;     // HTTP Status Code (e.g., 200)
-    protected $message;  // Response message
-    protected $data;     // Response data (if applicable)
-    protected $errors;   // Errors (if applicable)
-    protected $meta;     // Meta information (e.g., pagination)
-    protected $locale;   // Locale for internationalization
+    protected $success;   // Success flag (true for success, false for error)
+    protected $status;    // Response status ('success', 'error')
+    protected $code;      // HTTP Status Code (e.g., 200)
+    protected $message;   // Response message
+    protected $data;      // Response data (if applicable)
+    protected $errors;    // Errors (if applicable)
+    protected $meta;      // Meta information (e.g., pagination)
+    protected $locale;    // Locale for internationalization
 
     public function __construct($resource)
     {
         parent::__construct($resource);
 
+        $this->success = $resource['status'] === 'success'; // Set success as true if the status is 'success', otherwise false
         $this->status = $resource['status'] ?? 'success';
         $this->code = $resource['code'] ?? ApiCode::OK; // Default to OK (200)
         $this->message = $resource['message'] ?? $this->getMessageByCode($this->code);
@@ -34,6 +36,7 @@ class BaseResponse extends JsonResource
     public function toArray($request)
     {
         return [
+            'success' => $this->success,
             'status' => $this->status,
             'code' => $this->code,
             'message' => $this->message,
