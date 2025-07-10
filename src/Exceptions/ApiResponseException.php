@@ -23,6 +23,7 @@ class ApiResponseException extends Exception
     public function render()
     {
         return response()->json([
+            'success' => false,
             'status' => 'error',
             'code' => $this->statusCode,
             'message' => $this->getMessage(),
