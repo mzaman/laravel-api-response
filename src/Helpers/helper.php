@@ -213,3 +213,30 @@ if (!function_exists('response_too_many_requests')) {
         return app('api-response')->response_too_many_requests($message, $errors);
     }
 }
+
+if (! function_exists('validation_exception')) {
+    /**
+     * Helper function to create a structured validation exception response
+     *
+     * @param  string  $message
+     * @param  int  $code
+     * @param  array  $errors
+     * @return MasudZaman\LaravelApiResponse\Exceptions\ValidationException
+     */
+    function validation_exception($message, $code = 400, $errors = [])
+    {
+        $errorResponse = [
+            'status' => 'error',
+            'code' => $code,
+            'message' => $message,
+            'data' => null,
+            'errors' => $errors,
+            'meta' => null,
+            // 'locale' => app()->getLocale(),
+        ];
+
+        // Return the custom ValidationException with structured response
+        throw new \MasudZaman\LaravelApiResponse\Exceptions\ValidationException($errorResponse);
+    }
+}
+
