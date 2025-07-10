@@ -13,23 +13,23 @@ class ApiResponse
      * Send a successful response
      *
      * @param mixed $data
-     * @param int $statusCode
+     * @param int $code
      * @param string|null $message
      * @param array|null $meta
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    public function success($data = [], $statusCode = Response::HTTP_OK, $message = null, $meta = null, $headers = [])
+    public function success($data = [], $code = Response::HTTP_OK, $message = null, $meta = null, $headers = [])
     {
-        $message = $message ?: HttpResponse::getMessage($statusCode);
+        $message = $message ?: HttpResponse::getMessage($code);
 
         return response()->json(new BaseResponse([
-            'status' => 'success',
-            'code' => $statusCode,
+            'status' => HttpResponse::getType($code),
+            'code' => $code,
             'message' => $message,
             'data' => $this->formatData($data),
             'meta' => $meta,
-        ]), $statusCode, $headers);
+        ]), $code, $headers);
     }
 
     /**
@@ -51,22 +51,22 @@ class ApiResponse
     /**
      * Send an error response
      *
-     * @param int $statusCode
+     * @param int $code
      * @param string|null $message
      * @param array|null $errors
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    public function error($statusCode = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
+    public function error($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
     {
-        $message = $message ?: HttpResponse::getMessage($statusCode);
+        $message = $message ?: HttpResponse::getMessage($code);
 
         return response()->json(new BaseResponse([
-            'status' => 'error',
-            'code' => $statusCode,
+            'status' => HttpResponse::getType($code),
+            'code' => $code,
             'message' => $message,
             'errors' => $errors,
-        ]), $statusCode, $headers);
+        ]), $code, $headers);
     }
 
     /**
@@ -74,43 +74,43 @@ class ApiResponse
      *
      * @param mixed $data
      * @param string|null $message
-     * @param int $statusCode
+     * @param int $code
      * @param array|null $meta
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    private function sendResponse($data, $message, $statusCode, $meta = null, $headers = [])
+    private function sendResponse($data, $message, $code = Response::HTTP_OK, $meta = null, $headers = [])
     {
-        $message = $message ?: HttpResponse::getMessage($statusCode);
+        $message = $message ?: HttpResponse::getMessage($code);
 
         return response()->json(new BaseResponse([
-            'status' => 'success',
-            'code' => $statusCode,
+            'status' => HttpResponse::getType($code),
+            'code' => $code,
             'message' => $message,
             'data' => $this->formatData($data),
             'meta' => $meta,
-        ]), $statusCode, $headers);
+        ]), $code, $headers);
     }
 
     /**
      * Helper method to return error response
      *
      * @param string|null $message
-     * @param int $statusCode
+     * @param int $code
      * @param array|null $errors
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    private function sendError($message, $statusCode, $errors = [], $headers = [])
+    private function sendError($message, $code = Response::HTTP_INTERNAL_SERVER_ERROR, $errors = [], $headers = [])
     {
-        $message = $message ?: HttpResponse::getMessage($statusCode);
+        $message = $message ?: HttpResponse::getMessage($code);
 
         return response()->json(new BaseResponse([
-            'status' => 'error',
-            'code' => $statusCode,
+            'status' => HttpResponse::getType($code),
+            'code' => $code,
             'message' => $message,
             'errors' => $errors,
-        ]), $statusCode, $headers);
+        ]), $code, $headers);
     }
 
     /**
@@ -139,6 +139,33 @@ class ApiResponse
     public function accepted($data = [], $message = null, $meta = null, $headers = [])
     {
         return $this->sendResponse($data, $message, Response::HTTP_ACCEPTED, $meta, $headers);
+    }
+
+    /**
+     * Send a resource updated response (200)
+     *
+     * @param mixed $data
+     * @param string|null $message
+     * @param array|null $meta
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updated($data = [], $message = null, $meta = null, $headers = [])
+    {
+        return $this->sendResponse($data, $message, Response::HTTP_OK, $meta, $headers);
+    }
+
+    /**
+     * Send a resource deleted response (200)
+     *
+     * @param string|null $message
+     * @param array|null $meta
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleted($message = null, $meta = null, $headers = [])
+    {
+        return $this->sendResponse(null, $message ?: HttpResponse::getMessage(Response::HTTP_OK), Response::HTTP_OK, $meta, $headers);
     }
 
     /**
