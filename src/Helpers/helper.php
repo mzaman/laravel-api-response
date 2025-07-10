@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Response;
+
 if (!function_exists('apiResponse')) {
     /**
      * Helper function to send a success response
