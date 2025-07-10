@@ -28,10 +28,9 @@ class BaseResponse extends JsonResource
     {
         parent::__construct($resource);
 
-        // Set response properties
-        $this->success = $resource['status'] === 'success';
-        $this->status = $resource['status'] ?? HttpResponse::getType($this->code);
         $this->code = $resource['code'] ?? Response::HTTP_OK; // Default to 200
+        $this->status = $resource['status'] ?? HttpResponse::getType($this->code);
+        $this->success = $this->status === 'success'; // Set success flag based on status
         $this->message = $resource['message'] ?? $this->getMessageByCode($this->code);
         $this->data = $resource['data'] ?? null;
         $this->errors = $resource['errors'] ?? null;
