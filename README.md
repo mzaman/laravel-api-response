@@ -15,59 +15,36 @@ composer require mzaman/laravel-api-response
 
 ---
 
-## Publishing Configuration
+## Publishing Language Files
 
-After installing the package, you can publish the configuration file for easy customization:
+After installing the package, you need to publish the language files for localization support:
 
 ```bash
-php artisan vendor:publish --provider="MasudZaman\LaravelApiResponse\Providers\LaravelApiResponseServiceProvider" --tag=config
+php artisan vendor:publish --provider="MasudZaman\LaravelApiResponse\Providers\LaravelApiResponseServiceProvider" --tag=lang
 ```
 
-This will publish the `api-response.php` configuration file to the `config/` directory in your Laravel application.
+This will publish the language files to the `lang/` directory in your Laravel application. You can then edit or add your translations in the respective language files.
 
 ---
 
 ## Configuration
 
-After publishing, the `config/api-response.php` file will contain the following default configuration:
-
-```php
-<?php
-
-return [
-    'default_locale' => 'en',
-    'messages' => [
-        'success' => 'Request was successful',
-        'created_success' => 'Resource created successfully',
-        'bad_request' => 'Invalid request',
-        'unauthorized' => 'Authentication required',
-        'forbidden' => 'Permission denied',
-        'not_found' => 'Resource not found',
-        'internal_server_error' => 'An unexpected error occurred',
-        'service_unavailable' => 'Service temporarily unavailable',
-        'validation_failed' => 'Validation failed',
-        'conflict' => 'Conflict detected',
-        'rate_limit_exceeded' => 'Rate limit exceeded',
-    ],
-];
-```
-
-You can modify the **messages**, **default locale**, and any other settings in this file to suit your needs.
+There is no configuration file for custom messages in the package, as it uses the language files directly for all messages.
 
 ---
 
 ## Usage
 
-Once the package is installed and configured, you can use the provided methods to send standardized API responses.
+Once the package is installed and language files are configured, you can use the provided methods to send standardized API responses.
 
 ### 1. Success Response
 
-You can use the **`ApiResponse` facade** or **helper functions** to return success responses. Here’s how you can use them:
+You can use the **`ApiResponse` class** to return success responses. Here’s how you can use it:
 
 #### Using the Facade:
 
 ```php
-use MasudZaman\LaravelApiResponse\Facades\ApiResponse;
+use MasudZaman\LaravelApiResponse\Response\ApiResponse;
 
 class UserController extends Controller
 {
@@ -84,25 +61,6 @@ class UserController extends Controller
 }
 ```
 
-#### Using Helper Functions:
-
-You can also use the `apiResponse()` helper function for a more concise approach:
-
-```php
-class UserController extends Controller
-{
-    public function getUser($id)
-    {
-        $user = User::find($id);
-
-        if (!$user) {
-            return errorResponse('User not found', 404);
-        }
-
-        return apiResponse($user, 'User fetched successfully');
-    }
-}
-```
 
 ### 2. Error Response
 
@@ -120,7 +78,7 @@ public function createUser(Request $request)
 
     // Handle unexpected errors
     if (!$validatedData) {
-        return errorResponse(422, 'Validation failed', $errors = [
+        return ApiResponse::error(422, 'Validation failed', [
             'name' => 'Name is required',
             'email' => 'Email is invalid'
         ]);
@@ -128,50 +86,48 @@ public function createUser(Request $request)
 
     $user = User::create($validatedData);
 
-    return successResponse($user, 'User created successfully', 201);
+    return ApiResponse::success($user, 'User created successfully', 201);
 }
 ```
 
----
-
-### 3. Customizing Messages
-
-You can customize the messages for different HTTP status codes in the `config/api-response.php` file. For instance:
-
-```php
-'messages' => [
-    'success' => 'Your request was successfully processed',
-    'created_success' => 'The resource has been created successfully',
-    'validation_failed' => 'The data validation failed',
-    'unauthorized' => 'Authentication is required to access this resource',
-    // Other messages...
-]
-```
-
----
-
-### 4. Localization
+### 3. Localization
 
 Laravel API Response supports localization for error messages and other strings.
 
-To localize the messages, create language files in the `lang/{locale}/messages.php` directory, and Laravel will automatically load them based on the current locale.
+To localize the messages, create language files in the `lang/{locale}/api.php` directory, and Laravel will automatically load them based on the current locale.
 
 Example:
 
 ```php
-// lang/en/messages.php
+// lang/en/api.php
 return [
     'success' => 'Request was successful',
     'created_success' => 'Resource created successfully',
     'bad_request' => 'Invalid request',
+    'unauthorized' => 'Authentication required',
+    'forbidden' => 'Permission denied',
+    'not_found' => 'Resource not found',
+    'internal_server_error' => 'An unexpected error occurred',
+    'service_unavailable' => 'Service temporarily unavailable',
+    'validation_failed' => 'Validation failed',
+    'conflict' => 'Conflict detected',
+    'rate_limit_exceeded' => 'Rate limit exceeded',
     // Other messages...
 ];
 
-// lang/es/messages.php (Spanish localization)
+// lang/es/api.php (Spanish localization)
 return [
     'success' => 'La solicitud fue exitosa',
     'created_success' => 'Recurso creado exitosamente',
     'bad_request' => 'Solicitud inválida',
+    'unauthorized' => 'Se requiere autenticación',
+    'forbidden' => 'Permiso denegado',
+    'not_found' => 'Recurso no encontrado',
+    'internal_server_error' => 'Ocurrió un error inesperado',
+    'service_unavailable' => 'Servicio temporalmente no disponible',
+    'validation_failed' => 'La validación falló',
+    'conflict' => 'Conflicto detectado',
+    'rate_limit_exceeded' => 'Límite de solicitudes excedido',
     // Other messages...
 ];
 ```
@@ -182,9 +138,7 @@ You can switch the language based on the user's preference or application settin
 app()->setLocale('es');
 ```
 
----
-
-### 5. Pagination Support
+### 4. Pagination Support
 
 The package allows you to handle paginated data using the `meta` field to include pagination metadata. Here’s how you can return paginated data:
 
@@ -210,9 +164,7 @@ class UserController extends Controller
 
 This will automatically add pagination metadata to your response.
 
----
-
-### 6. Testing
+### 5. Testing
 
 You can test your API responses using **PHPUnit** or **Pest** (if you are using it).
 
@@ -267,36 +219,7 @@ class UserControllerTest extends TestCase
 }
 ```
 
----
-
-### 7. Facade and Helper Functions
-
-For easier access, you can use the **`ApiResponse` facade** or helper functions (`apiResponse()` and `apiError()`).
-
-```php
-use MasudZaman\LaravelApiResponse\Facades\ApiResponse;
-
-public function getUser($id)
-{
-    $user = User::find($id);
-
-    if (!$user) {
-        return ApiResponse::error(404, 'User not found');
-    }
-
-    return ApiResponse::success($user, 200, 'User fetched successfully');
-}
-```
-
-Alternatively, use the helper function:
-
-```php
-return apiResponse($user, 'User fetched successfully');
-```
-
----
-
-### 8. Helper Methods
+### 6. Helper Methods
 
 Below are the available helper functions for sending standardized responses based on different status codes:
 
@@ -316,6 +239,174 @@ Below are the available helper functions for sending standardized responses base
 - `manyRequestsResponse()` - Sends a too many requests response (429).
 - `updatedResponse()` - Sends an updated response (200).
 - `deletedResponse()` - Sends a deleted response (200).
+
+---
+
+### Helper Functions Example Usage
+
+Here is a list of example usages for various helper methods:
+
+---
+
+### apiResponse()
+
+Sends a success response.
+
+```php
+return apiResponse($data, 'The data was successfully retrieved.');
+```
+
+---
+
+### errorResponse()
+
+Sends an error response.
+
+```php
+return errorResponse(404);
+return errorResponse(500, 'Something went wrong.');
+```
+
+---
+
+### successResponse()
+
+Sends a basic success response (200).
+
+```php
+return successResponse($data);
+return successResponse($data, 'The data was successfully retrieved.');
+```
+
+---
+
+### createdResponse()
+
+Sends a resource created response (201).
+
+```php
+return createdResponse($data, 'Resource created successfully');
+```
+
+---
+
+### acceptedResponse()
+
+Sends an accepted response (202).
+
+```php
+return acceptedResponse($data, 'Request accepted for processing');
+```
+
+---
+
+### noContentResponse()
+
+Sends a no content response (204).
+
+```php
+return noContentResponse();
+```
+
+---
+
+### unavailableResponse()
+
+Sends a service unavailable response (503).
+
+```php
+return unavailableResponse('Service temporarily unavailable');
+```
+
+---
+
+### maintenanceResponse()
+
+Sends a maintenance mode response (503).
+
+```php
+return maintenanceResponse('Service under maintenance');
+```
+
+---
+
+### failResponse()
+
+Sends a bad request response (400).
+
+```php
+return failResponse('Bad request: Missing parameters');
+```
+
+---
+
+### unauthorizedResponse()
+
+Sends an unauthorized response (401).
+
+```php
+return unauthorizedResponse('Authentication required');
+```
+
+---
+
+### forbiddenResponse()
+
+Sends a forbidden response (403).
+
+```php
+return forbiddenResponse('Permission denied');
+```
+
+---
+
+### notFoundResponse()
+
+Sends a not found response (404).
+
+```php
+return notFoundResponse('The resource could not be found');
+```
+
+---
+
+### validationErrorResponse()
+
+Sends a validation error response (422).
+
+```php
+return validationErrorResponse('Validation failed', $errors);
+```
+
+---
+
+### manyRequestsResponse()
+
+Sends a too many requests response (429).
+
+```php
+return manyRequestsResponse('Too many requests, please try again later');
+```
+
+---
+
+### updatedResponse()
+
+Sends an updated response (200).
+
+```php
+return updatedResponse($data, 'Resource updated successfully');
+```
+
+---
+
+### deletedResponse()
+
+Sends a deleted response (200).
+
+```php
+return deletedResponse('Resource deleted successfully');
+```
 
 ---
 

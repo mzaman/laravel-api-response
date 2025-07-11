@@ -31,7 +31,7 @@ class BaseResponse extends JsonResource
         $this->code = $resource['code'] ?? Response::HTTP_OK; // Default to 200
         $this->status = $resource['status'] ?? HttpResponse::getType($this->code);
         $this->success = $this->status === 'success'; // Set success flag based on status
-        $this->message = $resource['message'] ?? $this->getMessageByCode($this->code);
+        $this->message = $resource['message'] ?? HttpResponse::getMessage($this->code);
         $this->data = $resource['data'] ?? null;
         $this->errors = $resource['errors'] ?? null;
         $this->locale = $resource['locale'] ?? app()->getLocale();
@@ -54,21 +54,5 @@ class BaseResponse extends JsonResource
             'errors' => $this->errors,
             'locale' => $this->locale,
         ];
-    }
-
-    /**
-     * Get the default message for the HTTP status code
-     * 
-     * @param int $code
-     * @return string
-     */
-    private function getMessageByCode(int $code): string
-    {
-        // Get default message based on the status code
-        $message = HttpResponse::getMessage($code);
-
-        // Optionally, allow customization of messages from config
-        $customMessages = config('api-response.messages', []);
-        return $customMessages[$code] ?? $message;
     }
 }

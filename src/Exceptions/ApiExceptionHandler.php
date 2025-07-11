@@ -186,7 +186,7 @@ class ApiExceptionHandler extends ExceptionHandler
         // Prepare response data
         $responseData = [
             'status' => HttpResponse::getType($code),
-            'message' => ucwords($message),
+            'message' => ucfirst($message),
             'errors' => $errors ?? ['error' => $exception->getMessage()],
             'code' => $code,
         ];
