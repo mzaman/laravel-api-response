@@ -53,6 +53,7 @@ class ApiExceptionHandler extends ExceptionHandler
         // If the environment is not production, include detailed error information
         if (!app()->environment('production')) {
             $errorResponse['data'] = [
+                'env' => app()->environment(),
                 'exception' => get_class($exception),
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),

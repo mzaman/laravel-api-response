@@ -5,10 +5,80 @@ namespace MasudZaman\LaravelApiResponse\Response;
 use MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse;
 use MasudZaman\LaravelApiResponse\Support\HttpResponse;
 use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 
 class ApiResponse
 {
+    /**
+     * Create response based on status code
+     * 
+     * @param mixed $data
+     * @param string|null $message
+     * @param array<string, mixed> $meta
+     * @param int $code
+     * @param \Throwable|null $exception
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function respond(
+        mixed $data = null,
+        ?string $message = null,
+        array $meta = [],
+        int $code = Response::HTTP_OK,
+        ?Throwable $exception = null
+    ): JsonResponse {
+        // Merge exception details with the data if the exception is not null
+        $data = $this->mergeExceptionDetails($data, $exception);
+
+        // For Success Codes
+        if (HttpResponse::isSuccess($code)) {
+            return $this->success($data, $code, $message, $meta);
+        }
+
+        // For Redirect Codes (3xx)
+        if (HttpResponse::isRedirect($code)) {
+            return $this->error($code, $message);
+        }
+
+        // For Client Error Codes (4xx)
+        if (HttpResponse::isClientError($code)) {
+            return $this->error($code, $message, is_array($data) ? $data : []);
+        }
+
+        // For Server Error Codes (5xx)
+        if (HttpResponse::isServerError($code)) {
+            return $this->error($code, $message, is_array($data) ? $data : []);
+        }
+
+        // Default error response
+        return $this->error($code, 'Unknown Error', is_array($data) ? $data : []);
+    }
+
+    /**
+     * Helper function to merge exception details with data if exception is provided
+     *
+     * @param mixed $data
+     * @param \Throwable|null $exception
+     * @return mixed
+     */
+    private function mergeExceptionDetails(mixed $data, ?Throwable $exception): mixed
+    {
+        if ($exception) {
+            // If the environment is not production, include detailed error information
+            if (!app()->environment('production')) {
+                $data['data'] = [
+                    'env' => app()->environment(),
+                    'message' => $exception->getMessage(),
+                    'exception' => get_class($exception),
+                    'file' => $exception->getFile(),
+                    'line' => $exception->getLine(),
+                    'trace' => $exception->getTraceAsString(),
+                ];
+            }
+        }
+        return $data;
+    }
+
     /**
      * Send a successful response
      *

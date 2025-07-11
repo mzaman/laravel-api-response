@@ -4,20 +4,26 @@ use Illuminate\Http\Response;
 
 if (!function_exists('apiResponse')) {
     /**
-     * Helper function to send a success response
-     *
+     * Helper function to create response based on status code
+     * 
      * @param mixed $data
-     * @param int $code
      * @param string|null $message
-     * @param array|null $meta
-     * @param array|null $headers
+     * @param array<string, mixed> $meta
+     * @param int $code
+     * @param \Throwable|null $exception
      * @return \Illuminate\Http\JsonResponse
      */
-    function apiResponse($data = [], $message = null, $code = Response::HTTP_OK, $meta = null, $headers = [])
-    {
-        return app('api-response')->success($data, $code, $message, $meta, $headers);
+    function apiResponse(
+        mixed $data = null,
+        ?string $message = null,
+        array $meta = [],
+        int $code = Response::HTTP_OK,
+        ?Throwable $exception = null
+    ) {
+        return app('api-response')->respond($data, $message, $meta, $code, $exception);
     }
 }
+
 
 if (!function_exists('errorResponse')) {
     /**
