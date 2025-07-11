@@ -57,18 +57,45 @@ class BaseResponse extends JsonResource
     }
 
     /**
-     * Get the default message for the HTTP status code
+     * Get the message by code considering localization.
      * 
      * @param int $code
      * @return string
      */
     private function getMessageByCode(int $code): string
     {
-        // Get default message based on the status code
-        $message = HttpResponse::getMessage($code);
-
-        // Optionally, allow customization of messages from config
+        // Check if the code exists in the custom messages (from config)
         $customMessages = config('api-response.messages', []);
-        return $customMessages[$code] ?? $message;
+        $messageKey = $this->getMessageKeyByCode($code);
+
+        // Fetch the custom message first, fallback to default if not available
+        $message = $customMessages[$messageKey] ?? HttpResponse::getMessage($code);
+
+        // Return localized message using Laravel's localization function
+        return __($message);
+    }
+
+    /**
+     * Get the message key for a given status code.
+     * 
+     * @param int $code
+     * @return string
+     */
+    private function getMessageKeyByCode(int $code): string
+    {
+        return match ($code) {
+            Response::HTTP_OK => 'success',
+            Response::HTTP_CREATED => 'created_success',
+            Response::HTTP_BAD_REQUEST => 'bad_request',
+            Response::HTTP_UNAUTHORIZED => 'unauthorized',
+            Response::HTTP_FORBIDDEN => 'forbidden',
+            Response::HTTP_NOT_FOUND => 'not_found',
+            Response::HTTP_INTERNAL_SERVER_ERROR => 'internal_server_error',
+            Response::HTTP_SERVICE_UNAVAILABLE => 'service_unavailable',
+            Response::HTTP_UNPROCESSABLE_ENTITY => 'validation_failed',
+            Response::HTTP_CONFLICT => 'conflict',
+            Response::HTTP_TOO_MANY_REQUESTS => 'rate_limit_exceeded',
+            default => 'internal_server_error',
+        };
     }
 }
