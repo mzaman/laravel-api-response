@@ -72,6 +72,7 @@ class HttpResponse
             Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE => 'The requested range is not satisfiable. Please check your range request.',
             Response::HTTP_EXPECTATION_FAILED => 'The expectation given in the request header could not be met.',
             Response::HTTP_I_AM_A_TEAPOT => 'I am a teapot. This is an April Fools joke, try again later.',
+            Response::HTTP_MISDIRECTED_REQUEST => 'The request was directed to the wrong server or endpoint. Please check the request URL and try again.',
             Response::HTTP_UNPROCESSABLE_ENTITY => 'The request data was invalid or unprocessable.',
             Response::HTTP_LOCKED => 'The resource is currently locked and cannot be modified.',
             Response::HTTP_FAILED_DEPENDENCY => 'The request failed due to a failed dependency.',
@@ -98,7 +99,6 @@ class HttpResponse
             default => 'An unknown error occurred while processing your request.',
         };
     }
-
 
     /**
      * Get the message by code considering localization and fallback logic.
