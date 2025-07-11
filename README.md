@@ -1,9 +1,7 @@
 
 # Laravel API Response
 
-A flexible and scalable API response handling package for Laravel, designed to provide a standardized approach for handling success, error, validation, and custom responses. It supports localization, customization of messages, pagination, and metadata for API responses.
-
----
+A flexible and scalable API response handling package for Laravel, designed to provide a standardized approach for handling success, error, validation, and custom responses. It supports **localization**, **customization** of messages, **pagination**, and **metadata** for API responses.
 
 ## Installation
 
@@ -12,8 +10,6 @@ To install the package, use **Composer**:
 ```bash
 composer require mzaman/laravel-api-response
 ```
-
----
 
 ## Publishing Language Files
 
@@ -25,13 +21,9 @@ php artisan vendor:publish --provider="MasudZaman\LaravelApiResponse\Providers\L
 
 This will publish the language files to the `lang/` directory in your Laravel application. You can then edit or add your translations in the respective language files.
 
----
-
 ## Configuration
 
 There is no configuration file for custom messages in the package, as it uses the language files directly for all messages.
-
----
 
 ## Usage
 
@@ -40,6 +32,8 @@ Once the package is installed and language files are configured, you can use the
 ### 1. Success Response
 
 You can use the **`ApiResponse` class** to return success responses. Here’s how you can use it:
+
+#### Using the Facade:
 
 ```php
 use MasudZaman\LaravelApiResponse\Response\ApiResponse;
@@ -58,8 +52,6 @@ class UserController extends Controller
     }
 }
 ```
-
----
 
 ### 2. Error Response
 
@@ -88,8 +80,6 @@ public function createUser(Request $request)
     return ApiResponse::success($user, 'User created successfully', 201);
 }
 ```
-
----
 
 ### 3. Localization
 
@@ -139,8 +129,6 @@ You can switch the language based on the user's preference or application settin
 app()->setLocale('es');
 ```
 
----
-
 ### 4. Pagination Support
 
 The package allows you to handle paginated data using the `meta` field to include pagination metadata. Here’s how you can return paginated data:
@@ -166,8 +154,6 @@ class UserController extends Controller
 ```
 
 This will automatically add pagination metadata to your response.
-
----
 
 ### 5. Testing
 
@@ -224,36 +210,7 @@ class UserControllerTest extends TestCase
 }
 ```
 
----
-
-### 6. Facade and Helper Functions
-
-For easier access, you can use the **`ApiResponse` facade** or helper functions (`apiResponse()` and `apiError()`).
-
-```php
-use MasudZaman\LaravelApiResponse\Facades\ApiResponse;
-
-public function getUser($id)
-{
-    $user = User::find($id);
-
-    if (!$user) {
-        return ApiResponse::error(404, 'User not found');
-    }
-
-    return ApiResponse::success($user, 200, 'User fetched successfully');
-}
-```
-
-Alternatively, use the helper function:
-
-```php
-return apiResponse($user, 'User fetched successfully');
-```
-
----
-
-### 7. Helper Methods
+### 6. Helper Methods
 
 Below are the available helper functions for sending standardized responses based on different status codes:
 
@@ -273,6 +230,39 @@ Below are the available helper functions for sending standardized responses base
 - `manyRequestsResponse()` - Sends a too many requests response (429).
 - `updatedResponse()` - Sends an updated response (200).
 - `deletedResponse()` - Sends a deleted response (200).
+
+---
+
+### Helper Functions Example Usage
+
+Here is a list of example usages for various helper methods:
+
+#### Success Response (`successResponse()`)
+
+```php
+return successResponse();
+return successResponse($data);
+return successResponse($data, 'The data was successfully retrieved.');
+```
+
+#### Error Response (`errorResponse()`)
+
+```php
+return errorResponse(404);
+return errorResponse(500, 'Something went wrong.');
+```
+
+#### Created Response (`createdResponse()`)
+
+```php
+return createdResponse($data, 'Resource created successfully.');
+```
+
+#### Validation Error Response (`validationErrorResponse()`)
+
+```php
+return validationErrorResponse('Validation failed.', $errors);
+```
 
 ---
 

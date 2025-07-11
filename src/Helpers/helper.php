@@ -29,13 +29,13 @@ if (!function_exists('errorResponse')) {
     /**
      * Helper function to send an error response
      *
-     * @param string|null $message
      * @param int $code
+     * @param string|null $message
      * @param array|null $errors
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function errorResponse($message = null, $code = Response::HTTP_INTERNAL_SERVER_ERROR, $errors = [], $headers = [])
+    function errorResponse($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
     {
         return app('api-response')->error($code, $message, $errors, $headers);
     }
