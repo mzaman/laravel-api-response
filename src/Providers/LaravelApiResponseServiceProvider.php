@@ -16,13 +16,14 @@ class LaravelApiResponseServiceProvider extends ServiceProvider
     }
 
     public function boot()
-    {
-        // Load localization files if any
-        $this->loadTranslationsFrom(__DIR__.'/../lang', 'api-response');
+    {        
+        // Load language files from the package
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'api');
 
-        // Publish config file
+        // Publish the language files
         $this->publishes([
-            __DIR__.'/../config/api-response.php' => config_path('api-response.php'),
-        ], 'config');
+            __DIR__.'/../resources/lang' => resource_path('lang'),
+        ], 'lang');
+
     }
 }

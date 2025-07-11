@@ -67,12 +67,9 @@ class BaseResponse extends JsonResource
         // Convert HTTP status code to snake_case for the key
         $messageKey = $this->getMessageKeyForCode($code);
 
-        // Retrieve the custom message from the config file based on the snake_case key
-        $customMessages = config('api-response.messages', []);
-        $message = $customMessages[$messageKey] ?? HttpResponse::getMessage($code);
-
-        // Return the localized message, or the default message if the locale is not found
-        return __($message);
+        // Retrieve the localized message from the language files
+        // Use fallback if the message is missing
+        return __('api.' . $messageKey) ?: HttpResponse::getMessage($code);
     }
 
     /**
@@ -149,5 +146,4 @@ class BaseResponse extends JsonResource
             default => 'unknown_status_code'
         };
     }
-
 }
