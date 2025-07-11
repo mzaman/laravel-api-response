@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse;
 use Throwable;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class ApiExceptionHandler extends ExceptionHandler
 {
@@ -57,12 +58,13 @@ class ApiExceptionHandler extends ExceptionHandler
                 'exception' => get_class($exception),
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),
-                'trace' => $exception->getTrace(),
+                'trace' => $exception->getTraceAsString(),
             ];
+            Log::error('API Exception', $errorResponse);
         }
-
+        
         // Exception handling logic for specific exception types
-        return match (true) {
+        $result = match (true) {
             // Authentication & Authorization Exceptions
             $exception instanceof \Illuminate\Auth\AuthenticationException =>
                 $this->unauthorizedException($exception),
@@ -111,7 +113,22 @@ class ApiExceptionHandler extends ExceptionHandler
             default =>
                 $this->defaultException($exception),
         };
+
+		return $result;
+
+        // // Convert the JsonResponse to an array before merging
+        // if ($result instanceof \Illuminate\Http\JsonResponse) {
+        //     $resultContent = $result->getData(true);  // This will return the response data as an array
+        // } else {
+        //     // If $result is not a JsonResponse, just use it directly
+        //     $resultContent = (array) $result;
+        // }
+
+        // $errorResponse = array_merge($errorResponse, $resultContent);
+        
+        // return $errorResponse;
     }
+
 
     // Handle Unauthorized Exception
     private function unauthorizedException($exception)
