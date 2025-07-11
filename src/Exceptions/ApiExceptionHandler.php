@@ -21,7 +21,6 @@ class ApiExceptionHandler extends ExceptionHandler
      */
     public function __construct($container)
     {
-        // Call parent constructor with the container
         parent::__construct($container);
     }
 
@@ -36,33 +35,6 @@ class ApiExceptionHandler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        // Initialize the default error response structure
-        $errorResponse = [
-            'success' => false,  // Indicating the request was not successful
-            'status' => 'error',  // Generic error status
-            'code' => Response::HTTP_INTERNAL_SERVER_ERROR,  // Default error code for unknown exceptions
-            'message' => $this->getErrorMessage($exception),  // General error message
-            'data' => null,  // No additional data for errors
-            'errors' => [  // Specific error details
-                'exception' => [get_class($exception)],  // The exception class
-                'message' => $exception->getMessage(),  // Exception message
-            ],
-            'meta' => null,  // Meta data can be added here, if needed
-            'locale' => app()->getLocale(),  // The current app locale
-        ];
-
-        // If the environment is not production, include detailed error information
-        if (!app()->environment('production')) {
-            $errorResponse['data'] = [
-                'env' => app()->environment(),
-                'exception' => get_class($exception),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-                'trace' => $exception->getTraceAsString(),
-            ];
-            Log::error('API Exception', $errorResponse);
-        }
-        
         // Exception handling logic for specific exception types
         $result = match (true) {
             // Authentication & Authorization Exceptions
@@ -114,177 +86,132 @@ class ApiExceptionHandler extends ExceptionHandler
                 $this->defaultException($exception),
         };
 
-		return $result;
-
-        // // Convert the JsonResponse to an array before merging
-        // if ($result instanceof \Illuminate\Http\JsonResponse) {
-        //     $resultContent = $result->getData(true);  // This will return the response data as an array
-        // } else {
-        //     // If $result is not a JsonResponse, just use it directly
-        //     $resultContent = (array) $result;
-        // }
-
-        // $errorResponse = array_merge($errorResponse, $resultContent);
-        
-        // return $errorResponse;
+        return $result;
     }
-
 
     // Handle Unauthorized Exception
     private function unauthorizedException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Unauthenticated',
-            'errors' => ['authentication' => $exception->getMessage()],
-            'code' => Response::HTTP_UNAUTHORIZED,
-        ]))->response()->setStatusCode(Response::HTTP_UNAUTHORIZED);
+        return $this->buildResponse('Unauthenticated', $exception, Response::HTTP_UNAUTHORIZED);
     }
 
     // Handle Forbidden Exception
     private function forbiddenException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Unauthorized action',
-            'errors' => ['authorization' => $exception->getMessage()],
-            'code' => Response::HTTP_FORBIDDEN,
-        ]))->response()->setStatusCode(Response::HTTP_FORBIDDEN);
+        return $this->buildResponse('Unauthorized action', $exception, Response::HTTP_FORBIDDEN);
     }
 
     // Handle Validation Error Exception
     private function validationErrorException($exception)
     {
-        // Check if the exception is an instance of ValidationException
-        if ($exception instanceof \Illuminate\Validation\ValidationException) {
-            // If there are validation errors, ensure we access them safely
-            $errors = $exception->errors() ?? [];  // Ensure errors() is called only if it exists
-
-            return (new BaseResponse([
-                'status' => 'error',
-                'message' => 'The given data was invalid',
-                'errors' => $errors,  // Include errors if available, else an empty array
-                'code' => Response::HTTP_UNPROCESSABLE_ENTITY,
-            ]))->response()->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
-        } else {
-            // If it's not a ValidationException, fallback with a generic error message
-            return (new BaseResponse([
-                'status' => 'error',
-                'message' => 'Unexpected error occurred during validation',
-                'errors' => ['validation' => 'An unknown validation error occurred.'],
-                'code' => Response::HTTP_INTERNAL_SERVER_ERROR,
-            ]))->response()->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        $errors = $exception->errors() ?? [];
+        return $this->buildResponse('The given data was invalid', $exception, Response::HTTP_UNPROCESSABLE_ENTITY, $errors);
     }
-
 
     // Handle Too Many Requests Exception
     private function tooManyRequestsException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Too Many Attempts',
-            'errors' => ['throttle' => $exception->getMessage()],
-            'code' => Response::HTTP_TOO_MANY_REQUESTS,
-        ]))->response()->setStatusCode(Response::HTTP_TOO_MANY_REQUESTS);
+        return $this->buildResponse('Too Many Attempts', $exception, Response::HTTP_TOO_MANY_REQUESTS);
     }
 
     // Handle Model Not Found Exception
     private function modelNotFoundException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Resource not found',
-            'errors' => ['model' => 'The requested resource was not found.'],
-            'code' => Response::HTTP_NOT_FOUND,
-        ]))->response()->setStatusCode(Response::HTTP_NOT_FOUND);
+        return $this->buildResponse('Resource not found', $exception, Response::HTTP_NOT_FOUND);
     }
 
     // Handle Database Query Error Exception
     private function databaseErrorException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Database Error',
-            'errors' => ['database' => $this->getDatabaseErrorMessage($exception)],
-            'code' => Response::HTTP_INTERNAL_SERVER_ERROR,
-        ]))->response()->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+        return $this->buildResponse('Database Error', $exception, Response::HTTP_INTERNAL_SERVER_ERROR, ['database' => $this->getDatabaseErrorMessage($exception)]);
     }
 
     // Handle HTTP Not Found Exception
     private function notFoundHttpException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Not Found',
-            'errors' => ['http' => $exception->getMessage()],
-            'code' => Response::HTTP_NOT_FOUND,
-        ]))->response()->setStatusCode(Response::HTTP_NOT_FOUND);
+        return $this->buildResponse('Not Found', $exception, Response::HTTP_NOT_FOUND);
     }
 
     // Handle Method Not Allowed HTTP Exception
     private function methodNotAllowedHttpException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Method Not Allowed',
-            'errors' => ['method' => $exception->getMessage()],
-            'code' => Response::HTTP_METHOD_NOT_ALLOWED,
-        ]))->response()->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED);
+        return $this->buildResponse('Method Not Allowed', $exception, Response::HTTP_METHOD_NOT_ALLOWED);
     }
 
     // Handle File Too Large Exception
     private function fileTooLargeException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'File Too Large',
-            'errors' => ['upload' => 'The uploaded file exceeds the maximum allowed size.'],
-            'code' => Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
-        ]))->response()->setStatusCode(Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+        return $this->buildResponse('File Too Large', $exception, Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
     }
 
     // Handle File Not Found Exception
     private function fileNotFoundException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'File Not Found',
-            'errors' => ['file' => 'The requested file was not found.'],
-            'code' => Response::HTTP_NOT_FOUND,
-        ]))->response()->setStatusCode(Response::HTTP_NOT_FOUND);
+        return $this->buildResponse('File Not Found', $exception, Response::HTTP_NOT_FOUND);
     }
 
     // Handle Service Unavailable Exception
     private function serviceUnavailableException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => 'Service Unavailable',
-            'errors' => ['service' => $exception->getMessage()],
-            'code' => Response::HTTP_SERVICE_UNAVAILABLE,
-        ]))->response()->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE);
+        return $this->buildResponse('Service Unavailable', $exception, Response::HTTP_SERVICE_UNAVAILABLE);
     }
 
     // Handle Generic HTTP Exception
     private function httpException($exception)
     {
-        return (new BaseResponse([
-            'status' => 'error',
-            'message' => $exception->getMessage(),
-            'code' => $exception->getStatusCode(),
-        ]))->response()->setStatusCode($exception->getStatusCode());
+        return $this->buildResponse($exception->getMessage(), $exception, $exception->getStatusCode());
     }
 
     // Default case for unhandled exceptions
     private function defaultException($exception)
     {
-        return (new BaseResponse([
+        return $this->buildResponse('Server Error', $exception, Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Builds a standardized response structure for exceptions, and logs the error if necessary.
+     * 
+     * @param string $message
+     * @param Throwable $exception
+     * @param int $code
+     * @param array|null $errors
+     * @return \Illuminate\Http\Response
+     */
+    private function buildResponse(string $message, Throwable $exception, int $code, array $errors = null)
+    {
+        // Prepare response data
+        $responseData = [
             'status' => 'error',
-            'message' => 'Server Error',
-            'errors' => ['server' => $this->getErrorMessage($exception)],
-            'code' => Response::HTTP_INTERNAL_SERVER_ERROR,
-        ]))->response()->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+            'message' => $message,
+            'errors' => $errors ?? ['error' => $exception->getMessage()],
+            'code' => $code,
+        ];
+
+        // Add data to response if needed
+        if (app()->environment('production')) {
+            // Only essential info for production
+            $responseData['data'] = null;
+        } else {
+            // Add detailed exception info in non-production environments
+            $responseData['data'] = [
+                'exception' => get_class($exception),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'trace' => $exception->getTraceAsString(),
+            ];
+        }
+
+        // Log the exception if the environment is not production
+        if (!app()->environment('production')) {
+            Log::error($message, [
+                'exception' => get_class($exception),
+                'message' => $exception->getMessage(),
+                'data' => $responseData['data'],
+            ]);
+        }
+
+        // Return the response with the appropriate HTTP status code
+        return (new BaseResponse($responseData))->response()->setStatusCode($code);
     }
 
     /**
