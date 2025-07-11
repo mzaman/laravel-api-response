@@ -57,45 +57,97 @@ class BaseResponse extends JsonResource
     }
 
     /**
-     * Get the message by code considering localization.
+     * Get the message by code considering localization and fallback logic.
      * 
      * @param int $code
      * @return string
      */
     private function getMessageByCode(int $code): string
     {
-        // Check if the code exists in the custom messages (from config)
-        $customMessages = config('api-response.messages', []);
-        $messageKey = $this->getMessageKeyByCode($code);
+        // Convert HTTP status code to snake_case for the key
+        $messageKey = $this->getMessageKeyForCode($code);
 
-        // Fetch the custom message first, fallback to default if not available
+        // Retrieve the custom message from the config file based on the snake_case key
+        $customMessages = config('api-response.messages', []);
         $message = $customMessages[$messageKey] ?? HttpResponse::getMessage($code);
 
-        // Return localized message using Laravel's localization function
+        // Return the localized message, or the default message if the locale is not found
         return __($message);
     }
 
     /**
-     * Get the message key for a given status code.
-     * 
+     * Convert HTTP status code to snake_case string key.
+     *
      * @param int $code
      * @return string
      */
-    private function getMessageKeyByCode(int $code): string
+    private function getMessageKeyForCode(int $code): string
     {
         return match ($code) {
+            // 2xx Success
             Response::HTTP_OK => 'success',
             Response::HTTP_CREATED => 'created_success',
+            Response::HTTP_ACCEPTED => 'accepted',
+            Response::HTTP_NON_AUTHORITATIVE_INFORMATION => 'non_authoritative_information',
+            Response::HTTP_NO_CONTENT => 'no_content',
+            Response::HTTP_RESET_CONTENT => 'reset_content',
+            Response::HTTP_PARTIAL_CONTENT => 'partial_content',
+
+            // 3xx Redirection
+            Response::HTTP_MULTIPLE_CHOICES => 'multiple_choices',
+            Response::HTTP_MOVED_PERMANENTLY => 'moved_permanently',
+            Response::HTTP_FOUND => 'found',
+            Response::HTTP_SEE_OTHER => 'see_other',
+            Response::HTTP_NOT_MODIFIED => 'not_modified',
+            Response::HTTP_USE_PROXY => 'use_proxy',
+            Response::HTTP_TEMPORARY_REDIRECT => 'temporary_redirect',
+            Response::HTTP_PERMANENTLY_REDIRECT => 'permanent_redirect',
+
+            // 4xx Client Error
             Response::HTTP_BAD_REQUEST => 'bad_request',
             Response::HTTP_UNAUTHORIZED => 'unauthorized',
+            Response::HTTP_PAYMENT_REQUIRED => 'payment_required',
             Response::HTTP_FORBIDDEN => 'forbidden',
             Response::HTTP_NOT_FOUND => 'not_found',
-            Response::HTTP_INTERNAL_SERVER_ERROR => 'internal_server_error',
-            Response::HTTP_SERVICE_UNAVAILABLE => 'service_unavailable',
-            Response::HTTP_UNPROCESSABLE_ENTITY => 'validation_failed',
+            Response::HTTP_METHOD_NOT_ALLOWED => 'method_not_allowed',
+            Response::HTTP_NOT_ACCEPTABLE => 'not_acceptable',
+            Response::HTTP_PROXY_AUTHENTICATION_REQUIRED => 'proxy_authentication_required',
+            Response::HTTP_REQUEST_TIMEOUT => 'request_timeout',
             Response::HTTP_CONFLICT => 'conflict',
+            Response::HTTP_GONE => 'gone',
+            Response::HTTP_LENGTH_REQUIRED => 'length_required',
+            Response::HTTP_PRECONDITION_FAILED => 'precondition_failed',
+            Response::HTTP_REQUEST_ENTITY_TOO_LARGE => 'request_entity_too_large',
+            Response::HTTP_REQUEST_URI_TOO_LONG => 'request_uri_too_long',
+            Response::HTTP_UNSUPPORTED_MEDIA_TYPE => 'unsupported_media_type',
+            Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE => 'requested_range_not_satisfiable',
+            Response::HTTP_EXPECTATION_FAILED => 'expectation_failed',
+            Response::HTTP_I_AM_A_TEAPOT => 'i_am_a_teapot',
+            Response::HTTP_UNPROCESSABLE_ENTITY => 'unprocessable_entity',
+            Response::HTTP_LOCKED => 'locked',
+            Response::HTTP_FAILED_DEPENDENCY => 'failed_dependency',
+            Response::HTTP_TOO_EARLY => 'too_early',
+            Response::HTTP_UPGRADE_REQUIRED => 'upgrade_required',
+            Response::HTTP_PRECONDITION_REQUIRED => 'precondition_required',
             Response::HTTP_TOO_MANY_REQUESTS => 'rate_limit_exceeded',
-            default => 'internal_server_error',
+            Response::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE => 'request_header_fields_too_large',
+            Response::HTTP_UNAVAILABLE_FOR_LEGAL_REASONS => 'unavailable_for_legal_reasons',
+
+            // 5xx Server Error
+            Response::HTTP_INTERNAL_SERVER_ERROR => 'internal_server_error',
+            Response::HTTP_NOT_IMPLEMENTED => 'not_implemented',
+            Response::HTTP_BAD_GATEWAY => 'bad_gateway',
+            Response::HTTP_SERVICE_UNAVAILABLE => 'service_unavailable',
+            Response::HTTP_GATEWAY_TIMEOUT => 'gateway_timeout',
+            Response::HTTP_VERSION_NOT_SUPPORTED => 'http_version_not_supported',
+            Response::HTTP_VARIANT_ALSO_NEGOTIATES_EXPERIMENTAL => 'variant_also_negotiates',
+            Response::HTTP_INSUFFICIENT_STORAGE => 'insufficient_storage',
+            Response::HTTP_LOOP_DETECTED => 'loop_detected',
+            Response::HTTP_NOT_EXTENDED => 'not_extended',
+            Response::HTTP_NETWORK_AUTHENTICATION_REQUIRED => 'network_authentication_required',
+
+            default => 'unknown_status_code'
         };
     }
+
 }
