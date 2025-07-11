@@ -3,6 +3,8 @@
 
 A flexible and scalable API response handling package for Laravel, designed to provide a standardized approach for handling success, error, validation, and custom responses. It supports **localization**, **customization** of messages, **pagination**, and **metadata** for API responses.
 
+---
+
 ## Installation
 
 To install the package, use **Composer**:
@@ -10,6 +12,8 @@ To install the package, use **Composer**:
 ```bash
 composer require mzaman/laravel-api-response
 ```
+
+---
 
 ## Publishing Language Files
 
@@ -21,9 +25,13 @@ php artisan vendor:publish --provider="MasudZaman\LaravelApiResponse\Providers\L
 
 This will publish the language files to the `lang/` directory in your Laravel application. You can then edit or add your translations in the respective language files.
 
+---
+
 ## Configuration
 
 There is no configuration file for custom messages in the package, as it uses the language files directly for all messages.
+
+---
 
 ## Usage
 
@@ -52,6 +60,7 @@ class UserController extends Controller
     }
 }
 ```
+
 
 ### 2. Error Response
 
@@ -237,31 +246,166 @@ Below are the available helper functions for sending standardized responses base
 
 Here is a list of example usages for various helper methods:
 
-#### Success Response (`successResponse()`)
+---
+
+### apiResponse()
+
+Sends a success response.
 
 ```php
-return successResponse();
-return successResponse($data);
-return successResponse($data, 'The data was successfully retrieved.');
+return apiResponse($data, 'The data was successfully retrieved.');
 ```
 
-#### Error Response (`errorResponse()`)
+---
+
+### errorResponse()
+
+Sends an error response.
 
 ```php
 return errorResponse(404);
 return errorResponse(500, 'Something went wrong.');
 ```
 
-#### Created Response (`createdResponse()`)
+---
+
+### successResponse()
+
+Sends a basic success response (200).
 
 ```php
-return createdResponse($data, 'Resource created successfully.');
+return successResponse($data);
+return successResponse($data, 'The data was successfully retrieved.');
 ```
 
-#### Validation Error Response (`validationErrorResponse()`)
+---
+
+### createdResponse()
+
+Sends a resource created response (201).
 
 ```php
-return validationErrorResponse('Validation failed.', $errors);
+return createdResponse($data, 'Resource created successfully');
+```
+
+---
+
+### acceptedResponse()
+
+Sends an accepted response (202).
+
+```php
+return acceptedResponse($data, 'Request accepted for processing');
+```
+
+---
+
+### noContentResponse()
+
+Sends a no content response (204).
+
+```php
+return noContentResponse();
+```
+
+---
+
+### unavailableResponse()
+
+Sends a service unavailable response (503).
+
+```php
+return unavailableResponse('Service temporarily unavailable');
+```
+
+---
+
+### maintenanceResponse()
+
+Sends a maintenance mode response (503).
+
+```php
+return maintenanceResponse('Service under maintenance');
+```
+
+---
+
+### failResponse()
+
+Sends a bad request response (400).
+
+```php
+return failResponse('Bad request: Missing parameters');
+```
+
+---
+
+### unauthorizedResponse()
+
+Sends an unauthorized response (401).
+
+```php
+return unauthorizedResponse('Authentication required');
+```
+
+---
+
+### forbiddenResponse()
+
+Sends a forbidden response (403).
+
+```php
+return forbiddenResponse('Permission denied');
+```
+
+---
+
+### notFoundResponse()
+
+Sends a not found response (404).
+
+```php
+return notFoundResponse('The resource could not be found');
+```
+
+---
+
+### validationErrorResponse()
+
+Sends a validation error response (422).
+
+```php
+return validationErrorResponse('Validation failed', $errors);
+```
+
+---
+
+### manyRequestsResponse()
+
+Sends a too many requests response (429).
+
+```php
+return manyRequestsResponse('Too many requests, please try again later');
+```
+
+---
+
+### updatedResponse()
+
+Sends an updated response (200).
+
+```php
+return updatedResponse($data, 'Resource updated successfully');
+```
+
+---
+
+### deletedResponse()
+
+Sends a deleted response (200).
+
+```php
+return deletedResponse('Resource deleted successfully');
 ```
 
 ---
