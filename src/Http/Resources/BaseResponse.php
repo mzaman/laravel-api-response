@@ -3,10 +3,11 @@
 namespace MasudZaman\LaravelApiResponse\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use MasudZaman\LaravelApiResponse\Constants\ApiCode;
+use MasudZaman\LaravelApiResponse\Support\HttpResponse;
+use Illuminate\Http\Response;
 
 /**
- * Base Response Class for structured API responses
+ * Base Response Class for structured API responses with localization support
  */
 class BaseResponse extends JsonResource
 {
@@ -16,23 +17,32 @@ class BaseResponse extends JsonResource
     protected $message;   // Response message
     protected $data;      // Response data (if applicable)
     protected $errors;    // Errors (if applicable)
-    protected $meta;      // Meta information (e.g., pagination)
     protected $locale;    // Locale for internationalization
 
+    /**
+     * Constructor to initialize the response
+     * 
+     * @param array $resource Response data
+     */
     public function __construct($resource)
     {
         parent::__construct($resource);
 
-        $this->success = $resource['status'] === 'success'; // Set success as true if the status is 'success', otherwise false
-        $this->status = $resource['status'] ?? 'success';
-        $this->code = $resource['code'] ?? ApiCode::OK; // Default to OK (200)
+        $this->code = $resource['code'] ?? Response::HTTP_OK; // Default to 200
+        $this->status = $resource['status'] ?? HttpResponse::getType($this->code);
+        $this->success = $this->status === 'success'; // Set success flag based on status
         $this->message = $resource['message'] ?? $this->getMessageByCode($this->code);
         $this->data = $resource['data'] ?? null;
         $this->errors = $resource['errors'] ?? null;
-        $this->meta = $resource['meta'] ?? null;
         $this->locale = $resource['locale'] ?? app()->getLocale();
     }
 
+    /**
+     * Convert the response data into an array
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return array
+     */
     public function toArray($request)
     {
         return [
@@ -42,38 +52,23 @@ class BaseResponse extends JsonResource
             'message' => $this->message,
             'data' => $this->data,
             'errors' => $this->errors,
-            'meta' => $this->meta,
             'locale' => $this->locale,
         ];
     }
 
-    private function getMessageByCode($code)
+    /**
+     * Get the default message for the HTTP status code
+     * 
+     * @param int $code
+     * @return string
+     */
+    private function getMessageByCode(int $code): string
     {
-        $messages = config('api-response.messages', []);
-        
-        switch ($code) {
-            case ApiCode::OK:
-                return $messages['success'];
-            case ApiCode::CREATED:
-                return $messages['created_success'];
-            case ApiCode::BAD_REQUEST:
-                return $messages['bad_request'];
-            case ApiCode::UNAUTHORIZED:
-                return $messages['unauthorized'];
-            case ApiCode::FORBIDDEN:
-                return $messages['forbidden'];
-            case ApiCode::NOT_FOUND:
-                return $messages['not_found'];
-            case ApiCode::INTERNAL_SERVER_ERROR:
-                return $messages['internal_server_error'];
-            case ApiCode::SERVICE_UNAVAILABLE:
-                return $messages['service_unavailable'];
-            case ApiCode::CONFLICT:
-                return $messages['conflict'];
-            case ApiCode::TOO_MANY_REQUESTS:
-                return $messages['rate_limit_exceeded'];
-            default:
-                return $messages[$code] ?? 'An unexpected error occurred';
-        }
+        // Get default message based on the status code
+        $message = HttpResponse::getMessage($code);
+
+        // Optionally, allow customization of messages from config
+        $customMessages = config('api-response.messages', []);
+        return $customMessages[$code] ?? $message;
     }
 }

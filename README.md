@@ -1,3 +1,4 @@
+
 # Laravel API Response
 
 A flexible and scalable API response handling package for Laravel, designed to provide a standardized approach for handling success, error, validation, and custom responses. It supports **localization**, **customization** of messages, **pagination**, and **metadata** for API responses.
@@ -85,7 +86,7 @@ class UserController extends Controller
 
 #### Using Helper Functions:
 
-You can also use the `api_response()` helper function for a more concise approach:
+You can also use the `apiResponse()` helper function for a more concise approach:
 
 ```php
 class UserController extends Controller
@@ -95,10 +96,10 @@ class UserController extends Controller
         $user = User::find($id);
 
         if (!$user) {
-            return api_error('User not found', 404);
+            return errorResponse('User not found', 404);
         }
 
-        return api_response($user, 'User fetched successfully');
+        return apiResponse($user, 'User fetched successfully');
     }
 }
 ```
@@ -119,7 +120,7 @@ public function createUser(Request $request)
 
     // Handle unexpected errors
     if (!$validatedData) {
-        return api_error('Validation failed', 422, $errors = [
+        return errorResponse(422, 'Validation failed', $errors = [
             'name' => 'Name is required',
             'email' => 'Email is invalid'
         ]);
@@ -127,7 +128,7 @@ public function createUser(Request $request)
 
     $user = User::create($validatedData);
 
-    return api_response($user, 'User created successfully', 201);
+    return successResponse($user, 'User created successfully', 201);
 }
 ```
 
@@ -270,7 +271,7 @@ class UserControllerTest extends TestCase
 
 ### 7. Facade and Helper Functions
 
-For easier access, you can use the **`ApiResponse` facade** or helper functions (`api_response()` and `api_error()`).
+For easier access, you can use the **`ApiResponse` facade** or helper functions (`apiResponse()` and `apiError()`).
 
 ```php
 use MasudZaman\LaravelApiResponse\Facades\ApiResponse;
@@ -290,21 +291,34 @@ public function getUser($id)
 Alternatively, use the helper function:
 
 ```php
-return api_response($user, 'User fetched successfully');
+return apiResponse($user, 'User fetched successfully');
 ```
+
+---
+
+### 8. Helper Methods
+
+Below are the available helper functions for sending standardized responses based on different status codes:
+
+- `apiResponse()` - Sends a success response.
+- `errorResponse()` - Sends an error response.
+- `successResponse()` - Sends a basic success response (200).
+- `createdResponse()` - Sends a resource created response (201).
+- `acceptedResponse()` - Sends an accepted response (202).
+- `noContentResponse()` - Sends a no content response (204).
+- `unavailableResponse()` - Sends a service unavailable response (503).
+- `maintenanceResponse()` - Sends a maintenance mode response (503).
+- `failResponse()` - Sends a bad request response (400).
+- `unauthorizedResponse()` - Sends an unauthorized response (401).
+- `forbiddenResponse()` - Sends a forbidden response (403).
+- `notFoundResponse()` - Sends a not found response (404).
+- `validationErrorResponse()` - Sends a validation error response (422).
+- `manyRequestsResponse()` - Sends a too many requests response (429).
+- `updatedResponse()` - Sends an updated response (200).
+- `deletedResponse()` - Sends a deleted response (200).
 
 ---
 
 ### License
 
 This package is open-sourced software licensed under the **MIT** license.
-
----
-
-### Conclusion
-
-The **Laravel API Response** package is a powerful tool for handling standardized API responses in your Laravel applications. It makes it easier to handle success, error, and validation responses, customize them, and localize them based on user preferences.
-
-By following the steps in this README, you can quickly integrate this package into your project and start sending structured API responses.
-
-Let me know if you need more examples or further assistance!
