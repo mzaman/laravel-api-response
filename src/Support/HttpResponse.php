@@ -111,9 +111,9 @@ class HttpResponse
         // Convert HTTP status code to snake_case for the key
         $messageKey = self::getMessageKeyForCode($code);
 
-        // Retrieve the localized message from the language files
-        // Use fallback if the message is missing
-        return __('api.' . $messageKey) ?: self::getDefaultMessage($code);
+        // Check if the translation exists for the message key
+        // If it exists, use it; if not, fallback to the default message
+        return Lang::has('api.' . $messageKey) ? __('api.' . $messageKey) : self::getDefaultMessage($code);
     }
 
     /**
