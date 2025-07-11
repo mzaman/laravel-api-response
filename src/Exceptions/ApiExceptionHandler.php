@@ -10,6 +10,7 @@ use MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse;
 use Throwable;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use MasudZaman\LaravelApiResponse\Support\HttpResponse;
 
 class ApiExceptionHandler extends ExceptionHandler
 {
@@ -92,97 +93,100 @@ class ApiExceptionHandler extends ExceptionHandler
     // Handle Unauthorized Exception
     private function unauthorizedException($exception)
     {
-        return $this->buildResponse('Unauthenticated', $exception, Response::HTTP_UNAUTHORIZED);
+        return $this->buildResponse(Response::HTTP_UNAUTHORIZED, $exception);
     }
 
     // Handle Forbidden Exception
     private function forbiddenException($exception)
     {
-        return $this->buildResponse('Unauthorized action', $exception, Response::HTTP_FORBIDDEN);
+        return $this->buildResponse(Response::HTTP_FORBIDDEN, $exception);
     }
 
     // Handle Validation Error Exception
     private function validationErrorException($exception)
     {
         $errors = $exception->errors() ?? [];
-        return $this->buildResponse('The given data was invalid', $exception, Response::HTTP_UNPROCESSABLE_ENTITY, $errors);
+        return $this->buildResponse(Response::HTTP_UNPROCESSABLE_ENTITY, $exception, null, $errors);
     }
 
     // Handle Too Many Requests Exception
     private function tooManyRequestsException($exception)
     {
-        return $this->buildResponse('Too Many Attempts', $exception, Response::HTTP_TOO_MANY_REQUESTS);
+        return $this->buildResponse(Response::HTTP_TOO_MANY_REQUESTS, $exception);
     }
 
     // Handle Model Not Found Exception
     private function modelNotFoundException($exception)
     {
-        return $this->buildResponse('Resource not found', $exception, Response::HTTP_NOT_FOUND);
+        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
     // Handle Database Query Error Exception
     private function databaseErrorException($exception)
     {
-        return $this->buildResponse('Database Error', $exception, Response::HTTP_INTERNAL_SERVER_ERROR, ['database' => $this->getDatabaseErrorMessage($exception)]);
+        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception, 'Database Error', ['database' => $this->getDatabaseErrorMessage($exception)]);
     }
 
     // Handle HTTP Not Found Exception
     private function notFoundHttpException($exception)
     {
-        return $this->buildResponse('Not Found', $exception, Response::HTTP_NOT_FOUND);
+        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
     // Handle Method Not Allowed HTTP Exception
     private function methodNotAllowedHttpException($exception)
     {
-        return $this->buildResponse('Method Not Allowed', $exception, Response::HTTP_METHOD_NOT_ALLOWED);
+        return $this->buildResponse(Response::HTTP_METHOD_NOT_ALLOWED, $exception);
     }
 
     // Handle File Too Large Exception
     private function fileTooLargeException($exception)
     {
-        return $this->buildResponse('File Too Large', $exception, Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+        return $this->buildResponse(Response::HTTP_REQUEST_ENTITY_TOO_LARGE, $exception);
     }
 
     // Handle File Not Found Exception
     private function fileNotFoundException($exception)
     {
-        return $this->buildResponse('File Not Found', $exception, Response::HTTP_NOT_FOUND);
+        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
     // Handle Service Unavailable Exception
     private function serviceUnavailableException($exception)
     {
-        return $this->buildResponse('Service Unavailable', $exception, Response::HTTP_SERVICE_UNAVAILABLE);
+        return $this->buildResponse(Response::HTTP_SERVICE_UNAVAILABLE, $exception);
     }
 
     // Handle Generic HTTP Exception
     private function httpException($exception)
     {
-        return $this->buildResponse($exception->getMessage(), $exception, $exception->getStatusCode());
+        return $this->buildResponse($exception->getStatusCode(), $exception, $exception->getMessage());
     }
 
     // Default case for unhandled exceptions
     private function defaultException($exception)
     {
-        return $this->buildResponse('Server Error', $exception, Response::HTTP_INTERNAL_SERVER_ERROR);
+        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception);
     }
 
     /**
      * Builds a standardized response structure for exceptions, and logs the error if necessary.
      * 
-     * @param string $message
-     * @param Throwable $exception
      * @param int $code
+     * @param Throwable $exception
+     * @param string|null $message
      * @param array|null $errors
      * @return \Illuminate\Http\Response
      */
-    private function buildResponse(string $message, Throwable $exception, int $code, array $errors = null)
+    private function buildResponse(int $code, Throwable $exception, string $message = null, array $errors = null)
     {
+        // Set the message to a default one if not provided
+        $message = $message ?? HttpResponse::getMessage($code);
+
         // Prepare response data
         $responseData = [
-            'status' => 'error',
-            'message' => $message,
+            'status' => HttpResponse::getType($code),
+            'message' => ucfirst($message),
             'errors' => $errors ?? ['error' => $exception->getMessage()],
             'code' => $code,
         ];
