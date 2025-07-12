@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Response;
+use Throwable;
 
 if (!function_exists('apiResponse')) {
     /**
@@ -24,7 +25,6 @@ if (!function_exists('apiResponse')) {
     }
 }
 
-
 if (!function_exists('errorResponse')) {
     /**
      * Helper function to send an error response
@@ -35,7 +35,22 @@ if (!function_exists('errorResponse')) {
      * @param array|null $headers
      * @return \Illuminate\Http\JsonResponse
      */
-    function errorResponse($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
+    function apiError($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
+    {
+        return app('api-response')->error($code, $message, $errors, $headers);
+    }
+}
+
+if (!function_exists('errorResponse')) {
+    /**
+     * Helper function to send a server error response (500)
+     *
+     * @param string|null $message
+     * @param array|null $errors
+     * @param array|null $headers
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function errorResponse($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = null, $headers = [])
     {
         return app('api-response')->error($code, $message, $errors, $headers);
     }
@@ -99,21 +114,6 @@ if (!function_exists('noContentResponse')) {
     function noContentResponse($headers = [])
     {
         return app('api-response')->noContent($headers);
-    }
-}
-
-if (!function_exists('errorResponse')) {
-    /**
-     * Helper function to send a server error response (500)
-     *
-     * @param string|null $message
-     * @param array|null $errors
-     * @param array|null $headers
-     * @return \Illuminate\Http\JsonResponse
-     */
-    function errorResponse($message = null, $errors = null, $headers = [])
-    {
-        return app('api-response')->error(Response::HTTP_INTERNAL_SERVER_ERROR, $message, $errors, $headers);
     }
 }
 

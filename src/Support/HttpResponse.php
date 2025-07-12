@@ -252,7 +252,6 @@ class HttpResponse
         return $code >= 500 && $code < 600;
     }
     
-
     /**
      * Get error type based on exception
      *
@@ -264,8 +263,7 @@ class HttpResponse
         return match (true) {
             // Authentication & Authorization Exceptions
             $exception instanceof \Illuminate\Auth\AuthenticationException,
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException => 'authorization',
-
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException,
             $exception instanceof \Illuminate\Auth\Access\AuthorizationException,
             $exception instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException => 'authorization',
 
@@ -273,35 +271,34 @@ class HttpResponse
             $exception instanceof \Illuminate\Validation\ValidationException => 'validation',
 
             // Client Errors (4xx)
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\BadRequestHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\ConflictHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\MisdirectedRequestHttpException => 'client_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\LengthRequiredHttpException => 'client_error',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\BadRequestHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\ConflictHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\MisdirectedRequestHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\LengthRequiredHttpException,
+            $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\ExpectationFailedHttpException => 'client_error',
 
             // Server Errors (5xx)
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException => 'server_error',
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException => 'server_error',
-            $exception instanceof \Illuminate\Database\QueryException => 'server_error',
-            $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException => 'server_error',
-            $exception instanceof \Illuminate\Database\Eloquent\MassAssignmentException => 'server_error',
-            $exception instanceof \Illuminate\Filesystem\FileNotFoundException => 'server_error',
-            $exception instanceof \Illuminate\Queue\QueueException => 'server_error',
-            $exception instanceof \Illuminate\Cache\CacheException => 'server_error',
-            $exception instanceof \Illuminate\Encryption\DecryptException => 'server_error',
-            $exception instanceof \Illuminate\Broadcasting\BroadcastException => 'server_error',
-            $exception instanceof \Illuminate\Mail\MailException => 'server_error',
-            $exception instanceof \Illuminate\Routing\Exceptions\UrlGenerationException => 'server_error',
-            $exception instanceof \Illuminate\Routing\Exceptions\RedirectException => 'server_error',
-
-            // Custom server errors
-            $exception instanceof \Illuminate\Session\TokenMismatchException => 'server_error',
-            $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException => 'server_error',
-
-            // Database-specific errors
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException,
+            $exception instanceof \Illuminate\Database\QueryException,
+            $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException,
+            $exception instanceof \Illuminate\Database\Eloquent\MassAssignmentException,
+            $exception instanceof \Illuminate\Filesystem\FileNotFoundException,
+            $exception instanceof \Illuminate\Queue\QueueException,
+            $exception instanceof \Illuminate\Cache\CacheException,
+            $exception instanceof \Illuminate\Encryption\DecryptException,
+            $exception instanceof \Illuminate\Broadcasting\BroadcastException,
+            $exception instanceof \Illuminate\Mail\MailException,
+            $exception instanceof \Illuminate\Routing\Exceptions\UrlGenerationException,
+            $exception instanceof \Illuminate\Routing\Exceptions\RedirectException,
+            $exception instanceof \Illuminate\Session\TokenMismatchException,
+            $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException,
             $exception instanceof \Illuminate\Database\Eloquent\UniqueConstraintViolationException => 'server_error',
 
             // Default to 'server_error' for unknown exceptions
@@ -337,6 +334,9 @@ class HttpResponse
             $exception instanceof \Symfony\Component\HttpKernel\Exception\ConflictHttpException => 'ERR_CONFLICT',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\MisdirectedRequestHttpException => 'ERR_MISDIRECTED_REQUEST',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\LengthRequiredHttpException => 'ERR_LENGTH_REQUIRED',
+            $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException => 'ERR_RATE_LIMIT_EXCEEDED',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException => 'ERR_UNSUPPORTED_MEDIA_TYPE',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\ExpectationFailedHttpException => 'ERR_EXPECTATION_FAILED',
 
             // Server Errors (5xx)
             $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException => 'ERR_UNKNOWN_HTTP_EXCEPTION',
@@ -364,4 +364,5 @@ class HttpResponse
             default => 'ERR_UNKNOWN_ERROR',
         };
     }
+
 }
