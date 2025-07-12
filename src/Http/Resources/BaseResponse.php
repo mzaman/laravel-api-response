@@ -1,4 +1,5 @@
 <?php
+
 namespace MasudZaman\LaravelApiResponse\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,15 +40,16 @@ class BaseResponse extends JsonResource
         // Set message, fallback to HttpResponse if not provided
         $this->message = $resource['message'] ?? HttpResponse::getMessage($this->code);
 
-        // Set error_type and error_code if it's an error response
-        if (in_array($this->status, ['fail', 'error'])) {
+        // Assign data, errors, error_type, and error_code based on response status
+        $this->data = $resource['data'] ?? null;
+        $this->errors = $resource['errors'] ?? null;
+
+        // Add error_type and error_code only if it's an error response
+        if (!HttpResponse::isSuccess($this->code)) {
+            // Set error_type and error_code if it's an error response
             $this->error_type = $resource['error_type'] ?? 'server_error'; // Default to 'server_error'
             $this->error_code = $resource['error_code'] ?? 'UNKNOWN_ERROR'; // Default to 'UNKNOWN_ERROR'
         }
-
-        // Assign other data values
-        $this->data = $resource['data'] ?? null;
-        $this->errors = $resource['errors'] ?? null;
 
         // Set the locale, default to the app locale
         $this->locale = $resource['locale'] ?? app()->getLocale();
@@ -61,16 +63,22 @@ class BaseResponse extends JsonResource
      */
     public function toArray($request)
     {
-        return [
+        $responseArray = [
             'success' => $this->success,
             'status' => $this->status,
             'code' => $this->code,
             'message' => $this->message,
-            'error_type' => $this->error_type,
-            'error_code' => $this->error_code,
             'data' => $this->data,
-            'errors' => $this->errors,
             'locale' => $this->locale,
         ];
+
+        // Include errors, error_type, and error_code only if it's an error response
+        if (!HttpResponse::isSuccess($this->code)) {
+            $responseArray['errors'] = $this->errors;
+            $responseArray['error_type'] = $this->error_type;
+            $responseArray['error_code'] = $this->error_code;
+        }
+
+        return $responseArray;
     }
 }

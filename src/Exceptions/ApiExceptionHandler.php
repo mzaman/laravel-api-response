@@ -93,32 +93,32 @@ class ApiExceptionHandler extends ExceptionHandler
     // Handle Unauthorized Exception (401)
     private function unauthorizedException($exception)
     {
-        return $this->buildResponse(Response::HTTP_UNAUTHORIZED, $exception, 'Unauthorized: Authentication required', null, 'authorization', 'AUTHENTICATION_FAILED');
+        return $this->buildResponse(Response::HTTP_UNAUTHORIZED, $exception);
     }
 
     // Handle Forbidden Exception (403)
     private function forbiddenException($exception)
     {
-        return $this->buildResponse(Response::HTTP_FORBIDDEN, $exception, 'Forbidden: You do not have permission to access this resource', null, 'authorization', 'FORBIDDEN_ACCESS');
+        return $this->buildResponse(Response::HTTP_FORBIDDEN, $exception);
     }
 
     // Handle Validation Error Exception (422)
     private function validationErrorException($exception)
     {
         $errors = $exception->errors() ?? [];
-        return $this->buildResponse(Response::HTTP_UNPROCESSABLE_ENTITY, $exception, 'Validation failed', $errors, 'validation', 'VALIDATION_FAILED');
+        return $this->buildResponse(Response::HTTP_UNPROCESSABLE_ENTITY, $exception, null, $errors);
     }
 
     // Handle Too Many Requests Exception (429)
     private function tooManyRequestsException($exception)
     {
-        return $this->buildResponse(Response::HTTP_TOO_MANY_REQUESTS, $exception, 'Rate limit exceeded', null, 'client_error', 'RATE_LIMIT_EXCEEDED');
+        return $this->buildResponse(Response::HTTP_TOO_MANY_REQUESTS, $exception);
     }
 
     // Handle Model Not Found Exception (404)
     private function modelNotFoundException($exception)
     {
-        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception, 'Resource not found', null, 'client_error', 'RESOURCE_NOT_FOUND');
+        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
     // Handle Database Query Error Exception (500)
@@ -130,31 +130,31 @@ class ApiExceptionHandler extends ExceptionHandler
     // Handle HTTP Not Found Exception (404)
     private function notFoundHttpException($exception)
     {
-        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception, 'Resource not found', null, 'client_error', 'RESOURCE_NOT_FOUND');
+        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
     // Handle Method Not Allowed HTTP Exception (405)
     private function methodNotAllowedHttpException($exception)
     {
-        return $this->buildResponse(Response::HTTP_METHOD_NOT_ALLOWED, $exception, 'Method not allowed', null, 'client_error', 'METHOD_NOT_ALLOWED');
+        return $this->buildResponse(Response::HTTP_METHOD_NOT_ALLOWED, $exception);
     }
 
     // Handle File Too Large Exception (413)
     private function fileTooLargeException($exception)
     {
-        return $this->buildResponse(Response::HTTP_REQUEST_ENTITY_TOO_LARGE, $exception, 'Request entity too large', null, 'client_error', 'REQUEST_TOO_LARGE');
+        return $this->buildResponse(Response::HTTP_REQUEST_ENTITY_TOO_LARGE, $exception);
     }
 
     // Handle File Not Found Exception (404)
     private function fileNotFoundException($exception)
     {
-        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception, 'File not found', null, 'client_error', 'FILE_NOT_FOUND');
+        return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
     // Handle Service Unavailable Exception (503)
     private function serviceUnavailableException($exception)
     {
-        return $this->buildResponse(Response::HTTP_SERVICE_UNAVAILABLE, $exception, 'Service temporarily unavailable', null, 'server_error', 'SERVICE_UNAVAILABLE');
+        return $this->buildResponse(Response::HTTP_SERVICE_UNAVAILABLE, $exception);
     }
 
     // Handle Generic HTTP Exception (500)
@@ -166,7 +166,7 @@ class ApiExceptionHandler extends ExceptionHandler
     // Default case for unhandled exceptions
     private function defaultException($exception)
     {
-        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception, 'An unexpected error occurred', null, 'server_error', 'UNKNOWN_ERROR');
+        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception, 'An unexpected error occurred');
     }
 
     /**
@@ -176,31 +176,32 @@ class ApiExceptionHandler extends ExceptionHandler
      * @param Throwable $exception
      * @param string|null $message
      * @param array|null $errors
-     * @param string|null $errorType
-     * @param string|null $errorCode
      * @return \Illuminate\Http\Response
      */
-    private function buildResponse(int $code, Throwable $exception, string $message = null, array $errors = null, string $errorType = null, string $errorCode = null)
+    private function buildResponse(int $code, Throwable $exception, string $message = null, array $errors = null)
     {
-        // Set the message to a default one if not provided
+        // Set message if not provided
         $message = $message ?? HttpResponse::getMessage($code);
 
         // Prepare response data
         $responseData = [
             'status' => HttpResponse::getType($code),
             'message' => ucfirst($message),
-            'error_type' => $errorType ?? 'server_error',
-            'error_code' => $errorCode ?? 'UNKNOWN_ERROR',
-            'errors' => $errors ?? ['error' => $exception->getMessage()],
+            // 'error_type' => $errorType,
+            // 'error_code' => $errorCode,
             'code' => $code,
         ];
 
+        // Set error_type and error_code if it's an error response
+        if (!HttpResponse::isSuccess($code)) {
+            $responseData['errors'] = $errors ?? ['error' => $exception->getMessage()];
+
+            $responseData['error_type'] = HttpResponse::getErrorType($exception);
+            $responseData['error_code'] = HttpResponse::getErrorCode($exception);
+        }
+
         // Add data to response if needed
-        if (app()->environment('production')) {
-            // Only essential info for production
-            $responseData['data'] = null;
-        } else {
-            // Add detailed exception info in non-production environments
+        if (!app()->environment('production')) {
             $responseData['data'] = [
                 'exception' => get_class($exception),
                 'file' => $exception->getFile(),
