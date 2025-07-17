@@ -11,6 +11,7 @@ use Throwable;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use MasudZaman\LaravelApiResponse\Support\HttpResponse;
+use BadMethodCallException;
 
 class ApiExceptionHandler extends ExceptionHandler
 {
@@ -62,6 +63,10 @@ class ApiExceptionHandler extends ExceptionHandler
 
                 $exception instanceof \Illuminate\Database\QueryException =>
                     $this->databaseErrorException($exception),
+
+                // Handle BadMethodCallException
+                $exception instanceof BadMethodCallException =>
+                    $this->badMethodCallException($exception),
 
                 // HTTP Exceptions
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException =>
@@ -132,6 +137,12 @@ class ApiExceptionHandler extends ExceptionHandler
     private function databaseErrorException($exception)
     {
         return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception, 'Database Error', ['database' => $this->getDatabaseErrorMessage($exception)], 'server_error', 'DATABASE_ERROR');
+    }
+
+    // Handle Bad Method Call Exception (500)
+    private function badMethodCallException($exception)
+    {
+        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception);
     }
 
     // Handle HTTP Not Found Exception (404)

@@ -299,7 +299,8 @@ class HttpResponse
             $exception instanceof \Illuminate\Routing\Exceptions\RedirectException,
             $exception instanceof \Illuminate\Session\TokenMismatchException,
             $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException,
-            $exception instanceof \Illuminate\Database\Eloquent\UniqueConstraintViolationException => 'server_error',
+            $exception instanceof \Illuminate\Database\Eloquent\UniqueConstraintViolationException,
+            $exception instanceof \BadMethodCallException => 'server_error',
 
             // Default to 'server_error' for unknown exceptions
             default => 'server_error',
@@ -359,6 +360,9 @@ class HttpResponse
             
             // Database-specific errors
             $exception instanceof \Illuminate\Database\Eloquent\UniqueConstraintViolationException => 'ERR_UNIQUE_CONSTRAINT_VIOLATION',
+
+            // BadMethodCallException Error Code
+            $exception instanceof \BadMethodCallException => 'ERR_BAD_METHOD_CALL',
 
             // Default to 'ERR_UNKNOWN_ERROR' for unknown exceptions
             default => 'ERR_UNKNOWN_ERROR',
