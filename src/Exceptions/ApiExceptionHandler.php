@@ -36,58 +36,65 @@ class ApiExceptionHandler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        // Handle different types of exceptions and return appropriate error responses
-        $result = match (true) {
-            // Authentication & Authorization Exceptions
-            $exception instanceof \Illuminate\Auth\AuthenticationException =>
-                $this->unauthorizedException($exception),
+        // Ensure this is an API request
+        if ($request->is('api/*') || $request->wantsJson()) {
 
-            $exception instanceof \Illuminate\Auth\Access\AuthorizationException,
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException =>
-                $this->forbiddenException($exception),
+            // Handle different types of exceptions and return appropriate error responses
+            $result = match (true) {
+                // Authentication & Authorization Exceptions
+                $exception instanceof \Illuminate\Auth\AuthenticationException =>
+                    $this->unauthorizedException($exception),
 
-            // Validation & Form Exceptions
-            $exception instanceof \Illuminate\Validation\ValidationException =>
-                $this->validationErrorException($exception),
+                $exception instanceof \Illuminate\Auth\Access\AuthorizationException,
+                $exception instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException =>
+                    $this->forbiddenException($exception),
 
-            $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException =>
-                $this->tooManyRequestsException($exception),
+                // Validation & Form Exceptions
+                $exception instanceof \Illuminate\Validation\ValidationException =>
+                    $this->validationErrorException($exception),
 
-            // Database & Model Exceptions
-            $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException =>
-                $this->modelNotFoundException($exception),
+                $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException =>
+                    $this->tooManyRequestsException($exception),
 
-            $exception instanceof \Illuminate\Database\QueryException =>
-                $this->databaseErrorException($exception),
+                // Database & Model Exceptions
+                $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException =>
+                    $this->modelNotFoundException($exception),
 
-            // HTTP Exceptions
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException =>
-                $this->notFoundHttpException($exception),
+                $exception instanceof \Illuminate\Database\QueryException =>
+                    $this->databaseErrorException($exception),
 
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException =>
-                $this->methodNotAllowedHttpException($exception),
+                // HTTP Exceptions
+                $exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException =>
+                    $this->notFoundHttpException($exception),
 
-            // File & Upload Exceptions
-            $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException =>
-                $this->fileTooLargeException($exception),
+                $exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException =>
+                    $this->methodNotAllowedHttpException($exception),
 
-            $exception instanceof \Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException =>
-                $this->fileNotFoundException($exception),
+                // File & Upload Exceptions
+                $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException =>
+                    $this->fileTooLargeException($exception),
 
-            // Service & Maintenance Exceptions
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException =>
-                $this->serviceUnavailableException($exception),
+                $exception instanceof \Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException =>
+                    $this->fileNotFoundException($exception),
 
-            // Generic HTTP Exceptions
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException =>
-                $this->httpException($exception),
+                // Service & Maintenance Exceptions
+                $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException =>
+                    $this->serviceUnavailableException($exception),
 
-            // Default case for unhandled exceptions
-            default =>
-                $this->defaultException($exception),
-        };
+                // Generic HTTP Exceptions
+                $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException =>
+                    $this->httpException($exception),
 
-        return $result;
+                // Default case for unhandled exceptions
+                default =>
+                    $this->defaultException($exception),
+            };
+
+            return $result;
+        }
+
+        // If not an API request, let the parent handle the error (use default rendering for web)
+        return parent::render($request, $exception);
     }
 
     // Handle Unauthorized Exception (401)
@@ -187,8 +194,6 @@ class ApiExceptionHandler extends ExceptionHandler
         $responseData = [
             'status' => HttpResponse::getType($code),
             'message' => ucfirst($message),
-            // 'error_type' => $errorType,
-            // 'error_code' => $errorCode,
             'code' => $code,
         ];
 
