@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Http\Response;
-use Throwable;
 
 if (!function_exists('apiResponse')) {
     /**
