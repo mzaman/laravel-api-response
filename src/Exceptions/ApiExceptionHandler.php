@@ -39,7 +39,7 @@ class ApiExceptionHandler extends ExceptionHandler
     {
         // Ensure this is an API request
         // Check if middleware set Accept: application/json or if request wants JSON
-        if ($request->expectsJson() || $this->isApiRoute($request)) {
+        if ($this->isApiRequest($request)) {
 
             // Handle different types of exceptions and return appropriate error responses
             $result = match (true) {
@@ -281,8 +281,15 @@ class ApiExceptionHandler extends ExceptionHandler
      * @param \Illuminate\Http\Request $request
      * @return bool
      */
-    protected function isApiRoute($request): bool
+    protected function isApiRequest($request): bool
     {
+
+        // Check if request expects JSON
+        // Ensure this is an API request
+        if ($request->is('api/*') || $request->isJson() || $request->expectsJson()) {
+            return true;
+        }
+
         // Check if middleware set the Accept header to application/json
         $accept = $request->header('Accept', '');
         if (strpos($accept, 'application/json') !== false) {
