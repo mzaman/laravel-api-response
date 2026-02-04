@@ -285,6 +285,11 @@ class ApiExceptionHandler extends ExceptionHandler
         if ($request->is('api/*') || $request->expectsJson()) {
             return true;
         }
+        
+        $accept = $request->header('Accept', '');
+        if (strpos($accept, 'application/json') !== false) {
+            return true;
+        }
 
         // Then check if route has 'api' middleware
         $route = $request->route();
@@ -297,6 +302,5 @@ class ApiExceptionHandler extends ExceptionHandler
 
         return false;
     }
-
 
 }
