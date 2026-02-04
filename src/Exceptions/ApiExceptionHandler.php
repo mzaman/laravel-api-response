@@ -37,9 +37,9 @@ class ApiExceptionHandler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        // Ensure this is an API request
-        if ($request->is('api/*') || $request->wantsJson()) {
-
+        // Check if request is on an API route (middleware will have set Accept: application/json header)
+        // But during exception rendering, we need to detect API routes
+        if ($this->isApiRequest($request)) {
             // Handle different types of exceptions and return appropriate error responses
             $result = match (true) {
                 // Authentication & Authorization Exceptions
@@ -270,4 +270,33 @@ class ApiExceptionHandler extends ExceptionHandler
             default => $this->getErrorMessage($e)
         };
     }
+
+    /**
+     * Check if the request is on an API route.
+     * The ForceJsonResponse middleware sets Accept: application/json for API requests.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return bool
+     */
+    protected function isApiRequest($request): bool
+    {
+        // Ensure this is an API request
+        // First check if middleware already set Accept header to json
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return true;
+        }
+
+        // Then check if route has 'api' middleware
+        $route = $request->route();
+        if ($route) {
+            $middlewares = $route->middleware() ?? [];
+            if (in_array('api', $middlewares, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
 }
