@@ -37,9 +37,10 @@ class ApiExceptionHandler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        // Check if request is on an API route (middleware will have set Accept: application/json header)
-        // But during exception rendering, we need to detect API routes
-        if ($this->isApiRequest($request)) {
+        // Ensure this is an API request
+        // Check if middleware set Accept: application/json or if request wants JSON
+        if ($request->expectsJson() || $this->isApiRoute($request)) {
+
             // Handle different types of exceptions and return appropriate error responses
             $result = match (true) {
                 // Authentication & Authorization Exceptions
@@ -272,26 +273,23 @@ class ApiExceptionHandler extends ExceptionHandler
     }
 
     /**
-     * Check if the request is on an API route.
-     * The ForceJsonResponse middleware sets Accept: application/json for API requests.
-     *
+     * Determine if the request is for an API route
+     * 
+     * Checks if the ForceJsonResponse middleware has set the Accept header to application/json
+     * or if the route has the 'api' middleware applied.
+     * 
      * @param \Illuminate\Http\Request $request
      * @return bool
      */
-    protected function isApiRequest($request): bool
+    protected function isApiRoute($request): bool
     {
-        // Ensure this is an API request
-        // First check if middleware already set Accept header to json
-        if ($request->is('api/*') || $request->expectsJson()) {
-            return true;
-        }
-        
+        // Check if middleware set the Accept header to application/json
         $accept = $request->header('Accept', '');
         if (strpos($accept, 'application/json') !== false) {
             return true;
         }
 
-        // Then check if route has 'api' middleware
+        // Check if the route has 'api' middleware
         $route = $request->route();
         if ($route) {
             $middlewares = $route->middleware() ?? [];
@@ -302,5 +300,4 @@ class ApiExceptionHandler extends ExceptionHandler
 
         return false;
     }
-
 }
