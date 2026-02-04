@@ -1,7 +1,7 @@
 {
     "name": "mzaman/laravel-api-response",
     "description": "A flexible and scalable API response handling package for Laravel",
-    "version": "3.1.0",
+    "version": "3.2.0",
     "type": "library",
     "homepage": "https://masudzaman.com",
     "keywords": [
