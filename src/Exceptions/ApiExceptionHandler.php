@@ -4,6 +4,7 @@ namespace MasudZaman\LaravelApiResponse\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
+use MasudZaman\LaravelApiResponse\Support\IsApiRequest;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse;
@@ -11,10 +12,12 @@ use Throwable;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use MasudZaman\LaravelApiResponse\Support\HttpResponse;
+use MasudZaman\LaravelApiResponse\Response\ApiResponse;
 use BadMethodCallException;
 
 class ApiExceptionHandler extends ExceptionHandler
 {
+    use IsApiRequest;
     /**
      * Create a new exception handler instance.
      *
@@ -45,55 +48,60 @@ class ApiExceptionHandler extends ExceptionHandler
             $result = match (true) {
                 // Authentication & Authorization Exceptions
                 $exception instanceof \Illuminate\Auth\AuthenticationException =>
-                    $this->unauthorizedException($exception),
+                $this->unauthorizedException($exception),
 
                 $exception instanceof \Illuminate\Auth\Access\AuthorizationException,
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException =>
-                    $this->forbiddenException($exception),
+                $this->forbiddenException($exception),
 
                 // Validation & Form Exceptions
                 $exception instanceof \Illuminate\Validation\ValidationException =>
-                    $this->validationErrorException($exception),
+                $this->validationErrorException($exception),
 
                 $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException =>
-                    $this->tooManyRequestsException($exception),
+                $this->tooManyRequestsException($exception),
 
                 // Database & Model Exceptions
                 $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException =>
-                    $this->modelNotFoundException($exception),
+                $this->modelNotFoundException($exception),
 
                 $exception instanceof \Illuminate\Database\QueryException =>
-                    $this->databaseErrorException($exception),
+                $this->databaseErrorException($exception),
 
                 // Handle BadMethodCallException
                 $exception instanceof BadMethodCallException =>
-                    $this->badMethodCallException($exception),
+                $this->badMethodCallException($exception),
 
                 // HTTP Exceptions
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException =>
-                    $this->notFoundHttpException($exception),
+                $this->notFoundHttpException($exception),
 
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException =>
-                    $this->methodNotAllowedHttpException($exception),
+                $this->methodNotAllowedHttpException($exception),
 
                 // File & Upload Exceptions
                 $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException =>
-                    $this->fileTooLargeException($exception),
+                $this->fileTooLargeException($exception),
 
                 $exception instanceof \Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException =>
-                    $this->fileNotFoundException($exception),
+                $this->fileNotFoundException($exception),
 
                 // Service & Maintenance Exceptions
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException =>
-                    $this->serviceUnavailableException($exception),
+                $this->serviceUnavailableException($exception),
+
+                // Application-level exceptions with getStatusCode() (e.g., raindrop-server BaseException)
+                // This catches any exception that provides its own HTTP status code
+                method_exists($exception, 'getStatusCode') && method_exists($exception, 'getErrors') =>
+                $this->applicationException($exception),
 
                 // Generic HTTP Exceptions
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException =>
-                    $this->httpException($exception),
+                $this->httpException($exception),
 
                 // Default case for unhandled exceptions
                 default =>
-                    $this->defaultException($exception),
+                $this->defaultException($exception),
             };
 
             return $result;
@@ -134,10 +142,22 @@ class ApiExceptionHandler extends ExceptionHandler
         return $this->buildResponse(Response::HTTP_NOT_FOUND, $exception);
     }
 
-    // Handle Database Query Error Exception (500)
+    // Handle Database Query Error Exception
+    // Returns appropriate status code based on error type:
+    // - 409 for duplicates/conflicts
+    // - 400 for data validation issues
+    // - 500 for server/connection errors
     private function databaseErrorException($exception)
     {
-        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception, 'Database Error', ['database' => $this->getDatabaseErrorMessage($exception)], 'server_error', 'DATABASE_ERROR');
+        $statusCode = $this->getDatabaseErrorStatusCode($exception);
+        $message = $this->getDatabaseErrorMessage($exception);
+
+        return $this->buildResponse(
+            $statusCode,
+            $exception,
+            $message,
+            ['database' => $message]
+        );
     }
 
     // Handle Bad Method Call Exception (500)
@@ -176,16 +196,30 @@ class ApiExceptionHandler extends ExceptionHandler
         return $this->buildResponse(Response::HTTP_SERVICE_UNAVAILABLE, $exception);
     }
 
-    // Handle Generic HTTP Exception (500)
+    // Handle Generic HTTP Exception
     private function httpException($exception)
     {
-        return $this->buildResponse($exception->getStatusCode(), $exception, $exception->getMessage(), null, 'server_error', 'UNKNOWN_ERROR');
+        return $this->buildResponse(
+            $exception->getStatusCode(),
+            $exception,
+            $exception->getMessage()
+        );
+    }
+
+    // Handle application-level exceptions (e.g., raindrop-server BaseException subclasses)
+    // Any exception that implements getStatusCode() and getErrors() methods
+    private function applicationException($exception)
+    {
+        $code = $exception->getStatusCode();
+        $errors = $exception->getErrors();
+
+        return exceptionResponse($exception, $code, $exception->getMessage(), $errors);
     }
 
     // Default case for unhandled exceptions
     private function defaultException($exception)
     {
-        return $this->buildResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $exception, 'An unexpected error occurred');
+        return exceptionResponse($exception, Response::HTTP_INTERNAL_SERVER_ERROR, 'An unexpected error occurred');
     }
 
     /**
@@ -195,9 +229,9 @@ class ApiExceptionHandler extends ExceptionHandler
      * @param Throwable $exception
      * @param string|null $message
      * @param array|null $errors
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    private function buildResponse(int $code, Throwable $exception, string $message = null, array $errors = null)
+    private function buildResponse(int $code, Throwable $exception, ?string $message = null, ?array $errors = null)
     {
         // Set message if not provided
         $message = $message ?? HttpResponse::getMessage($code);
@@ -217,27 +251,22 @@ class ApiExceptionHandler extends ExceptionHandler
             $responseData['error_code'] = HttpResponse::getErrorCode($exception);
         }
 
-        // Add data to response if needed
+        // Add debug data in non-production environments
         if (!app()->environment('production')) {
-            $responseData['data'] = [
-                'exception' => get_class($exception),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-                'trace' => $exception->getTraceAsString(),
-            ];
+            $responseData['data'] = ApiResponse::buildDebugData($exception);
         }
 
-        // Log the exception if the environment is not production
+        // Log the exception in non-production environments
         if (!app()->environment('production')) {
             Log::error($message, [
                 'exception' => get_class($exception),
                 'message' => $exception->getMessage(),
-                'data' => $responseData['data'],
+                'data' => $responseData['data'] ?? null,
             ]);
         }
 
         // Return the response with the appropriate HTTP status code
-        return (new BaseResponse($responseData))->response()->setStatusCode($code);
+        return response()->json(new BaseResponse($responseData), $code);
     }
 
     /**
@@ -254,57 +283,76 @@ class ApiExceptionHandler extends ExceptionHandler
     }
 
     /**
-     * Get database-specific error message
+     * Get appropriate HTTP status code for database exception
+     * 
+     * @param \Illuminate\Database\QueryException $e
+     * @return int
+     */
+    protected function getDatabaseErrorStatusCode(\Illuminate\Database\QueryException $e): int
+    {
+        $message = $e->getMessage();
+
+        return match (true) {
+            // Conflict errors (409)
+            str_contains($message, 'Duplicate entry'),
+            str_contains($message, 'UNIQUE constraint failed'),
+            str_contains($message, 'unique constraint') => Response::HTTP_CONFLICT,
+
+            // Client errors (400) - data validation issues
+            str_contains($message, 'Data too long'),
+            str_contains($message, 'Data truncated'),
+            str_contains($message, 'Incorrect') && str_contains($message, 'value'),
+            str_contains($message, 'Out of range'),
+            str_contains($message, 'Invalid') => Response::HTTP_BAD_REQUEST,
+
+            // Foreign key constraint could be 400 or 404 depending on context
+            // Using 400 as it's usually a client data issue
+            str_contains($message, 'Foreign key constraint'),
+            str_contains($message, 'FOREIGN KEY constraint failed') => Response::HTTP_BAD_REQUEST,
+
+            // Server errors (500) - everything else
+            default => Response::HTTP_INTERNAL_SERVER_ERROR
+        };
+    }
+
+    /**
+     * Get user-friendly error message for database exception
      * 
      * @param \Illuminate\Database\QueryException $e
      * @return string
      */
     protected function getDatabaseErrorMessage(\Illuminate\Database\QueryException $e): string
     {
+        $message = $e->getMessage();
+
         return match (true) {
-            str_contains($e->getMessage(), 'Duplicate entry') => 'Duplicate entry found.',
-            str_contains($e->getMessage(), 'Foreign key constraint') => 'Related record not found.',
-            str_contains($e->getMessage(), 'Data too long') => 'Data exceeds maximum length.',
-            str_contains($e->getMessage(), 'Column not found') => 'Invalid database column.',
-            str_contains($e->getMessage(), 'Table') && str_contains($e->getMessage(), 'doesn\'t exist') => 'Database table not found.',
-            str_contains($e->getMessage(), 'Connection refused') => 'Database connection failed.',
-            default => $this->getErrorMessage($e)
+            // Duplicate/Unique constraint violations
+            str_contains($message, 'Duplicate entry') => 'This record already exists',
+            str_contains($message, 'UNIQUE constraint failed') => 'This record already exists',
+            str_contains($message, 'unique constraint') => 'This record already exists',
+
+            // Foreign key constraints
+            str_contains($message, 'Foreign key constraint') => 'Related record not found or cannot be deleted',
+            str_contains($message, 'FOREIGN KEY constraint failed') => 'Related record not found or cannot be deleted',
+
+            // Data validation issues
+            str_contains($message, 'Data too long') => 'Data exceeds maximum allowed length',
+            str_contains($message, 'Data truncated') => 'Invalid data format provided',
+            str_contains($message, 'Out of range') => 'Value is out of acceptable range',
+
+            // Schema issues
+            str_contains($message, 'Column not found') => 'Invalid field specified',
+            str_contains($message, 'Unknown column') => 'Invalid field specified',
+            str_contains($message, 'Table') && str_contains($message, 'doesn\'t exist') => 'Database table not found',
+
+            // Connection issues
+            str_contains($message, 'Connection refused') => 'Database connection failed',
+            str_contains($message, 'Connection timed out') => 'Database connection timeout',
+            str_contains($message, 'Access denied') => 'Database access denied',
+
+            // Default fallback
+            default => 'A database error occurred'
         };
     }
 
-    /**
-     * Determine if the request is for an API route
-     * 
-     * Checks if the ForceJsonResponse middleware has set the Accept header to application/json
-     * or if the route has the 'api' middleware applied.
-     * 
-     * @param \Illuminate\Http\Request $request
-     * @return bool
-     */
-    protected function isApiRequest($request): bool
-    {
-
-        // Check if request expects JSON
-        // Ensure this is an API request
-        if ($request->is('api/*') || $request->isJson() || $request->expectsJson()) {
-            return true;
-        }
-
-        // Check if middleware set the Accept header to application/json
-        $accept = $request->header('Accept', '');
-        if (strpos($accept, 'application/json') !== false) {
-            return true;
-        }
-
-        // Check if the route has 'api' middleware
-        $route = $request->route();
-        if ($route) {
-            $middlewares = $route->middleware() ?? [];
-            if (in_array('api', $middlewares, true)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }
