@@ -7,6 +7,7 @@ use MasudZaman\LaravelApiResponse\Support\HttpResponse;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class ApiResponse
 {
@@ -94,6 +95,14 @@ class ApiResponse
         // Set default message if not provided
         $message = $message ?: HttpResponse::getMessage($code);
 
+        // Initialize meta array if null
+        $meta = $meta ?? [];
+
+        // Add request ID to meta if present
+        if ($requestId = request()->header('X-Request-ID')) {
+            $meta['request_id'] = $requestId;
+        }
+
         return response()->json(new BaseResponse([
             'status' => HttpResponse::getType($code),
             'code' => $code,
@@ -126,19 +135,106 @@ class ApiResponse
      * @param string|null $message
      * @param array|null $errors
      * @param array|null $headers
+     * @param string|null $errorCode Machine-readable error code
+     * @param array $context Additional context data (only in debug mode)
      * @return \Illuminate\Http\JsonResponse
      */
-    public function error($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [])
+    public function error($code = Response::HTTP_INTERNAL_SERVER_ERROR, $message = null, $errors = [], $headers = [], $errorCode = null, $context = [])
     {
         // Set default message if not provided
         $message = $message ?: HttpResponse::getMessage($code);
 
-        return response()->json(new BaseResponse([
+        $response = [
             'status' => HttpResponse::getType($code),
             'code' => $code,
             'message' => $message,
             'errors' => $errors,
-        ]), $code, $headers);
+            'error_type' => HttpResponse::getErrorTypeFromCode($code),
+            'error_code' => $errorCode ?? HttpResponse::getErrorCodeFromCode($code),
+        ];
+
+        // Add request ID if present
+        if ($requestId = request()->header('X-Request-ID')) {
+            $response['request_id'] = $requestId;
+        }
+
+        // Add context in debug mode only
+        if (config('app.debug') && !empty($context)) {
+            $response['context'] = $context;
+        }
+
+        return response()->json(new BaseResponse($response), $code, $headers);
+    }
+
+    /**
+     * Build a complete error response from a Throwable.
+     *
+     * This is the **single point** for converting any exception into a
+     * consistent JSON error response.  Debug data (class, file, line, trace)
+     * is automatically included in non-production environments.
+     *
+     * @param  Throwable    $exception
+     * @param  int          $code       HTTP status code (default: 500)
+     * @param  string|null  $message    Override message (null = use exception message)
+     * @param  array        $errors     Structured error details (validation, etc.)
+     * @param  array        $headers    Extra HTTP headers
+     * @return JsonResponse
+     */
+    public function exceptionResponse(
+        Throwable $exception,
+        int $code = Response::HTTP_INTERNAL_SERVER_ERROR,
+        ?string $message = null,
+        array $errors = [],
+        array $headers = []
+    ): JsonResponse {
+        $message = $message ?: ($exception->getMessage() ?: HttpResponse::getMessage($code));
+
+        $payload = [
+            'status' => HttpResponse::getType($code),
+            'code' => $code,
+            'message' => ucfirst($message),
+            'errors' => $errors ?: ['error' => $exception->getMessage()],
+            'error_type' => HttpResponse::getErrorType($exception),
+            'error_code' => HttpResponse::getErrorCode($exception),
+        ];
+
+        // Add request ID if present
+        if ($requestId = request()->header('X-Request-ID')) {
+            $payload['request_id'] = $requestId;
+        }
+
+        // Include debug data in non-production environments
+        if (!app()->environment('production')) {
+            $payload['data'] = self::buildDebugData($exception);
+        }
+
+        return response()->json(new BaseResponse($payload), $code, $headers);
+    }
+
+    /**
+     * Build debug data array from a Throwable.
+     *
+     * Reusable by any caller that needs to attach debug info to a response.
+     *
+     * @param  Throwable $exception
+     * @param  int       $traceLimit  Max number of trace frames
+     * @return array
+     */
+    public static function buildDebugData(Throwable $exception, int $traceLimit = 10): array
+    {
+        return [
+            'exception' => get_class($exception),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+            'trace' => collect($exception->getTrace())
+                ->take($traceLimit)
+                ->map(fn($frame) => [
+                    'file' => $frame['file'] ?? '(internal)',
+                    'line' => $frame['line'] ?? 0,
+                    'function' => ($frame['class'] ?? '') . ($frame['type'] ?? '') . ($frame['function'] ?? ''),
+                ])
+                ->toArray(),
+        ];
     }
 
     /**
@@ -182,6 +278,8 @@ class ApiResponse
             'code' => $code,
             'message' => $message,
             'errors' => $errors,
+            'error_type' => HttpResponse::getErrorTypeFromCode($code),
+            'error_code' => HttpResponse::getErrorCodeFromCode($code),
         ]), $code, $headers);
     }
 
@@ -322,10 +420,14 @@ class ApiResponse
      * @param string|null $message
      * @param array|null $errors
      * @param array|null $headers
+     * @param int|null $retryAfter Seconds to wait before retrying
      * @return \Illuminate\Http\JsonResponse
      */
-    public function manyRequests($message = null, $errors = [], $headers = [])
+    public function manyRequests($message = null, $errors = [], $headers = [], $retryAfter = null)
     {
+        if ($retryAfter !== null) {
+            $headers['Retry-After'] = $retryAfter;
+        }
         return $this->sendError($message, Response::HTTP_TOO_MANY_REQUESTS, $errors, $headers);
     }
 
@@ -348,10 +450,14 @@ class ApiResponse
      * @param string|null $message
      * @param array|null $errors
      * @param array|null $headers
+     * @param int|null $retryAfter Seconds to wait before retrying
      * @return \Illuminate\Http\JsonResponse
      */
-    public function serviceUnavailable($message = null, $errors = [], $headers = [])
+    public function serviceUnavailable($message = null, $errors = [], $headers = [], $retryAfter = null)
     {
+        if ($retryAfter !== null) {
+            $headers['Retry-After'] = $retryAfter;
+        }
         return $this->sendError($message, Response::HTTP_SERVICE_UNAVAILABLE, $errors, $headers);
     }
 

@@ -251,7 +251,65 @@ class HttpResponse
     {
         return $code >= 500 && $code < 600;
     }
-    
+
+    /**
+     * Get error type based on HTTP status code
+     *
+     * @param int $code
+     * @return string
+     */
+    public static function getErrorTypeFromCode(int $code): string
+    {
+        return match ($code) {
+            Response::HTTP_UNAUTHORIZED,
+            Response::HTTP_FORBIDDEN => 'authorization',
+            Response::HTTP_UNPROCESSABLE_ENTITY => 'validation',
+            Response::HTTP_BAD_REQUEST,
+            Response::HTTP_NOT_FOUND,
+            Response::HTTP_METHOD_NOT_ALLOWED,
+            Response::HTTP_CONFLICT,
+            Response::HTTP_NOT_ACCEPTABLE,
+            Response::HTTP_GONE,
+            Response::HTTP_PRECONDITION_FAILED,
+            Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
+            Response::HTTP_UNSUPPORTED_MEDIA_TYPE,
+            Response::HTTP_TOO_MANY_REQUESTS => 'client_error',
+            default => $code >= 400 && $code < 500 ? 'client_error' : 'server_error',
+        };
+    }
+
+    /**
+     * Get error code based on HTTP status code
+     *
+     * @param int $code
+     * @return string
+     */
+    public static function getErrorCodeFromCode(int $code): string
+    {
+        return match ($code) {
+            Response::HTTP_BAD_REQUEST => 'ERR_BAD_REQUEST',
+            Response::HTTP_UNAUTHORIZED => 'ERR_UNAUTHORIZED',
+            Response::HTTP_PAYMENT_REQUIRED => 'ERR_PAYMENT_REQUIRED',
+            Response::HTTP_FORBIDDEN => 'ERR_FORBIDDEN',
+            Response::HTTP_NOT_FOUND => 'ERR_NOT_FOUND',
+            Response::HTTP_METHOD_NOT_ALLOWED => 'ERR_METHOD_NOT_ALLOWED',
+            Response::HTTP_NOT_ACCEPTABLE => 'ERR_NOT_ACCEPTABLE',
+            Response::HTTP_CONFLICT => 'ERR_CONFLICT',
+            Response::HTTP_GONE => 'ERR_GONE',
+            Response::HTTP_PRECONDITION_FAILED => 'ERR_PRECONDITION_FAILED',
+            Response::HTTP_REQUEST_ENTITY_TOO_LARGE => 'ERR_PAYLOAD_TOO_LARGE',
+            Response::HTTP_UNSUPPORTED_MEDIA_TYPE => 'ERR_UNSUPPORTED_MEDIA_TYPE',
+            Response::HTTP_UNPROCESSABLE_ENTITY => 'ERR_VALIDATION_FAILED',
+            Response::HTTP_TOO_MANY_REQUESTS => 'ERR_RATE_LIMIT_EXCEEDED',
+            Response::HTTP_INTERNAL_SERVER_ERROR => 'ERR_INTERNAL_SERVER_ERROR',
+            Response::HTTP_NOT_IMPLEMENTED => 'ERR_NOT_IMPLEMENTED',
+            Response::HTTP_BAD_GATEWAY => 'ERR_BAD_GATEWAY',
+            Response::HTTP_SERVICE_UNAVAILABLE => 'ERR_SERVICE_UNAVAILABLE',
+            Response::HTTP_GATEWAY_TIMEOUT => 'ERR_GATEWAY_TIMEOUT',
+            default => 'ERR_UNKNOWN',
+        };
+    }
+
     /**
      * Get error type based on exception
      *
@@ -281,7 +339,10 @@ class HttpResponse
             $exception instanceof \Symfony\Component\HttpKernel\Exception\LengthRequiredHttpException,
             $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException,
             $exception instanceof \Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException,
-            $exception instanceof \Symfony\Component\HttpKernel\Exception\ExpectationFailedHttpException => 'client_error',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\ExpectationFailedHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\PreconditionFailedHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\GoneHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException => 'client_error',
 
             // Server Errors (5xx)
             $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException,
@@ -300,11 +361,44 @@ class HttpResponse
             $exception instanceof \Illuminate\Session\TokenMismatchException,
             $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException,
             $exception instanceof \Illuminate\Database\Eloquent\UniqueConstraintViolationException,
+            $exception instanceof \Illuminate\Contracts\Container\BindingResolutionException,
+            $exception instanceof \Illuminate\Contracts\Encryption\EncryptException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\BadGatewayHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\GatewayTimeoutHttpException,
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException,
+            $exception instanceof \RuntimeException,
+            $exception instanceof \LogicException,
             $exception instanceof \BadMethodCallException => 'server_error',
 
-            // Default to 'server_error' for unknown exceptions
-            default => 'server_error',
+            // Fallback: Check status code for custom exceptions
+            default => self::getErrorTypeFromStatusCode($exception),
         };
+    }
+
+    /**
+     * Get error type from exception's status code (fallback for custom exceptions)
+     *
+     * @param \Throwable $exception
+     * @return string
+     */
+    private static function getErrorTypeFromStatusCode(Throwable $exception): string
+    {
+        // Try to get status code from exception
+        $statusCode = null;
+
+        if (method_exists($exception, 'getStatusCode')) {
+            $statusCode = $exception->getStatusCode();
+        } elseif ($exception->getCode() >= 100 && $exception->getCode() < 600) {
+            $statusCode = $exception->getCode();
+        }
+
+        // If we have a valid HTTP status code, use it
+        if ($statusCode !== null) {
+            return self::getErrorTypeFromCode($statusCode);
+        }
+
+        // Final fallback
+        return 'server_error';
     }
 
     /**
@@ -319,7 +413,7 @@ class HttpResponse
             // Authentication & Authorization Exceptions
             $exception instanceof \Illuminate\Auth\AuthenticationException => 'ERR_AUTHENTICATION_FAILED',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException => 'ERR_UNAUTHORIZED_ACCESS',
-            
+
             $exception instanceof \Illuminate\Auth\Access\AuthorizationException => 'ERR_ACCESS_DENIED',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException => 'ERR_ACCESS_DENIED',
 
@@ -338,8 +432,13 @@ class HttpResponse
             $exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException => 'ERR_RATE_LIMIT_EXCEEDED',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException => 'ERR_UNSUPPORTED_MEDIA_TYPE',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\ExpectationFailedHttpException => 'ERR_EXPECTATION_FAILED',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\PreconditionFailedHttpException => 'ERR_PRECONDITION_FAILED',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\GoneHttpException => 'ERR_RESOURCE_GONE',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException => 'ERR_NOT_ACCEPTABLE',
 
             // Server Errors (5xx)
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\BadGatewayHttpException => 'ERR_BAD_GATEWAY',
+            $exception instanceof \Symfony\Component\HttpKernel\Exception\GatewayTimeoutHttpException => 'ERR_GATEWAY_TIMEOUT',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException => 'ERR_UNKNOWN_HTTP_EXCEPTION',
             $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException => 'ERR_SERVICE_UNAVAILABLE',
             $exception instanceof \Illuminate\Database\QueryException => 'ERR_DATABASE_QUERY_EXCEPTION',
@@ -357,16 +456,46 @@ class HttpResponse
             // Custom server errors
             $exception instanceof \Illuminate\Session\TokenMismatchException => 'ERR_SESSION_TOKEN_MISMATCH',
             $exception instanceof \Illuminate\Http\Exceptions\PostTooLargeException => 'ERR_REQUEST_TOO_LARGE',
-            
+
             // Database-specific errors
             $exception instanceof \Illuminate\Database\Eloquent\UniqueConstraintViolationException => 'ERR_UNIQUE_CONSTRAINT_VIOLATION',
 
             // BadMethodCallException Error Code
             $exception instanceof \BadMethodCallException => 'ERR_BAD_METHOD_CALL',
+            $exception instanceof \RuntimeException => 'ERR_RUNTIME_EXCEPTION',
+            $exception instanceof \LogicException => 'ERR_LOGIC_EXCEPTION',
+            $exception instanceof \Illuminate\Contracts\Container\BindingResolutionException => 'ERR_BINDING_RESOLUTION',
+            $exception instanceof \Illuminate\Contracts\Encryption\EncryptException => 'ERR_ENCRYPTION_FAILED',
 
-            // Default to 'ERR_UNKNOWN_ERROR' for unknown exceptions
-            default => 'ERR_UNKNOWN_ERROR',
+            // Fallback: Check status code for custom exceptions
+            default => self::getErrorCodeFromStatusCode($exception),
         };
+    }
+
+    /**
+     * Get error code from exception's status code (fallback for custom exceptions)
+     *
+     * @param \Throwable $exception
+     * @return string
+     */
+    private static function getErrorCodeFromStatusCode(Throwable $exception): string
+    {
+        // Try to get status code from exception
+        $statusCode = null;
+
+        if (method_exists($exception, 'getStatusCode')) {
+            $statusCode = $exception->getStatusCode();
+        } elseif ($exception->getCode() >= 100 && $exception->getCode() < 600) {
+            $statusCode = $exception->getCode();
+        }
+
+        // If we have a valid HTTP status code, use it
+        if ($statusCode !== null) {
+            return self::getErrorCodeFromCode($statusCode);
+        }
+
+        // Final fallback
+        return 'ERR_UNKNOWN_ERROR';
     }
 
 }

@@ -33,6 +33,191 @@ There is no configuration file for custom messages in the package, as it uses th
 
 ---
 
+## What's New in v3.3.0
+
+Version 3.3.0 introduces powerful new features for better API observability, debugging, and client communication:
+
+### 1. **Request ID Tracking**
+
+Automatically correlate requests across your application and logs. When a client sends an `X-Request-ID` header, it's automatically included in all responses.
+
+**Benefits:**
+- Track requests across microservices
+- Correlate logs and errors
+- Debug distributed systems
+- Improve observability
+
+**Example:**
+```php
+// Client sends request with header: X-Request-ID: abc-123-def-456
+
+return ApiResponse::success($data, 200, 'Data retrieved');
+
+// Response automatically includes:
+// "meta": {
+//     "request_id": "abc-123-def-456"
+// }
+```
+
+**No code changes required!** Just ensure your client sends the `X-Request-ID` header.
+
+---
+
+### 2. **Custom Error Codes**
+
+Provide machine-readable error codes for better client-side error handling.
+
+**Benefits:**
+- Consistent error identification
+- Better client-side error handling
+- Easier error tracking and analytics
+- Internationalization-friendly
+
+**Example:**
+```php
+// Without error code (auto-generated)
+return ApiResponse::error(404, 'Raindrop not found');
+// Response: "error_code": "NOT_FOUND"
+
+// With custom error code
+return ApiResponse::error(
+    404,
+    'Raindrop not found',
+    [],
+    [],
+    'RAINDROP_NOT_FOUND'  // Custom machine-readable code
+);
+// Response: "error_code": "RAINDROP_NOT_FOUND"
+```
+
+**Use Cases:**
+```php
+// Business logic errors
+return ApiResponse::error(400, 'Insufficient credits', [], [], 'INSUFFICIENT_CREDITS');
+
+// Resource conflicts
+return ApiResponse::error(409, 'Email already exists', [], [], 'EMAIL_DUPLICATE');
+
+// Permission errors
+return ApiResponse::error(403, 'Premium feature', [], [], 'PREMIUM_REQUIRED');
+```
+
+---
+
+### 3. **Context Data for Debugging**
+
+Add additional debugging information that's only visible in debug mode.
+
+**Benefits:**
+- Rich debugging information in development
+- No sensitive data leakage in production
+- Faster issue resolution
+- Better error reports
+
+**Example:**
+```php
+return ApiResponse::error(
+    404,
+    'Raindrop not found',
+    [],
+    [],
+    'RAINDROP_NOT_FOUND',
+    [
+        'raindrop_id' => 12345,
+        'user_id' => 67890,
+        'collection_id' => -1,
+        'search_query' => 'Laravel tutorials'
+    ]
+);
+
+// In debug mode (APP_DEBUG=true):
+// "context": {
+//     "raindrop_id": 12345,
+//     "user_id": 67890,
+//     "collection_id": -1,
+//     "search_query": "Laravel tutorials"
+// }
+
+// In production (APP_DEBUG=false):
+// Context is automatically excluded
+```
+
+---
+
+### 4. **Retry-After Headers**
+
+Tell clients when to retry failed requests due to rate limiting or service unavailability.
+
+**Benefits:**
+- Better client behavior
+- Reduced server load
+- Improved user experience
+- Standards-compliant (RFC 7231)
+
+**Rate Limiting Example:**
+```php
+return ApiResponse::manyRequests(
+    'Too many requests. Please slow down.',
+    [],
+    [],
+    60  // Retry after 60 seconds
+);
+
+// Response includes:
+// HTTP Header: Retry-After: 60
+// "message": "Too many requests. Please slow down."
+```
+
+**Service Unavailable Example:**
+```php
+return ApiResponse::serviceUnavailable(
+    'External API temporarily unavailable',
+    [],
+    [],
+    120  // Retry after 120 seconds (2 minutes)
+);
+
+// Response includes:
+// HTTP Header: Retry-After: 120
+// "message": "External API temporarily unavailable"
+```
+
+**Smart Client Implementation:**
+```javascript
+// JavaScript client example
+fetch('/api/raindrops')
+    .then(response => {
+        if (response.status === 429 || response.status === 503) {
+            const retryAfter = response.headers.get('Retry-After');
+            console.log(`Retry after ${retryAfter} seconds`);
+            // Schedule retry
+            setTimeout(() => fetch('/api/raindrops'), retryAfter * 1000);
+        }
+        return response.json();
+    });
+```
+
+---
+
+### 5. **Backward Compatibility**
+
+All new features are **100% backward compatible**:
+- All new parameters are optional
+- Default values maintain existing behavior
+- No breaking changes
+- Existing code works without modifications
+
+**Migration:**
+```php
+// Old code (still works!)
+return ApiResponse::error(404, 'Not found');
+
+// New code (with enhancements)
+return ApiResponse::error(404, 'Not found', [], [], 'RESOURCE_NOT_FOUND', ['id' => 123]);
+```
+
+---
+
 ## Usage
 
 Once the package is installed and language files are configured, you can use the provided methods to send standardized API responses.

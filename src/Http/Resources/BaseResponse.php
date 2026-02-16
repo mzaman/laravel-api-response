@@ -47,8 +47,9 @@ class BaseResponse extends JsonResource
         // Add error_type and error_code only if it's an error response
         if (!HttpResponse::isSuccess($this->code)) {
             // Set error_type and error_code if it's an error response
-            $this->error_type = $resource['error_type'] ?? 'server_error'; // Default to 'server_error'
-            $this->error_code = $resource['error_code'] ?? 'UNKNOWN_ERROR'; // Default to 'UNKNOWN_ERROR'
+            // Use HttpResponse static methods to derive from status code if not explicitly provided
+            $this->error_type = $resource['error_type'] ?? HttpResponse::getErrorTypeFromCode($this->code);
+            $this->error_code = $resource['error_code'] ?? HttpResponse::getErrorCodeFromCode($this->code);
         }
 
         // Set the locale, default to the app locale
