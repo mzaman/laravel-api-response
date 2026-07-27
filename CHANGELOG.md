@@ -35,10 +35,10 @@ return ApiResponse::success($data);
 ```php
 return ApiResponse::error(
     404,
-    'Raindrop not found',
+    'Resource not found',
     [],
     [],
-    'RAINDROP_NOT_FOUND'  // Machine-readable code
+    'RESOURCE_NOT_FOUND'  // Machine-readable code
 );
 ```
 
@@ -46,11 +46,11 @@ return ApiResponse::error(
 ```php
 return ApiResponse::error(
     404,
-    'Raindrop not found',
+    'Resource not found',
     [],
     [],
-    'RAINDROP_NOT_FOUND',
-    ['raindrop_id' => 123, 'user_id' => 456]  // Debug context
+    'RESOURCE_NOT_FOUND',
+    ['resource_id' => 123, 'user_id' => 456]  // Debug context
 );
 ```
 

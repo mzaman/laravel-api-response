@@ -63,15 +63,15 @@ class ApiResponseV3FeaturesTest extends TestCase
   {
     $response = $this->apiResponse->error(
       404,
-      'Raindrop not found',
+      'Document not found',
       [],
       [],
-      'RAINDROP_NOT_FOUND'
+      'DOCUMENT_NOT_FOUND'
     );
     $data = $response->getData(true);
 
     $this->assertArrayHasKey('error_code', $data);
-    $this->assertEquals('RAINDROP_NOT_FOUND', $data['error_code']);
+    $this->assertEquals('DOCUMENT_NOT_FOUND', $data['error_code']);
   }
 
   /**
@@ -95,17 +95,17 @@ class ApiResponseV3FeaturesTest extends TestCase
     config(['app.debug' => true]);
 
     $context = [
-      'raindrop_id' => 12345,
+      'document_id' => 12345,
       'user_id' => 67890,
-      'collection_id' => -1
+      'folder_id' => -1
     ];
 
     $response = $this->apiResponse->error(
       404,
-      'Raindrop not found',
+      'Document not found',
       [],
       [],
-      'RAINDROP_NOT_FOUND',
+      'DOCUMENT_NOT_FOUND',
       $context
     );
     $data = $response->getData(true);
@@ -123,16 +123,16 @@ class ApiResponseV3FeaturesTest extends TestCase
     config(['app.debug' => false]);
 
     $context = [
-      'raindrop_id' => 12345,
+      'document_id' => 12345,
       'user_id' => 67890
     ];
 
     $response = $this->apiResponse->error(
       404,
-      'Raindrop not found',
+      'Document not found',
       [],
       [],
-      'RAINDROP_NOT_FOUND',
+      'DOCUMENT_NOT_FOUND',
       $context
     );
     $data = $response->getData(true);
@@ -253,11 +253,11 @@ class ApiResponseV3FeaturesTest extends TestCase
 
     $response = $this->apiResponse->error(
       404,
-      'Resource not found',
+      'Document not found',
       ['field' => 'validation error'],
       [],
-      'RESOURCE_NOT_FOUND',
-      ['resource_id' => 999, 'resource_type' => 'raindrop']
+      'DOCUMENT_NOT_FOUND',
+      ['resource_id' => 999, 'resource_type' => 'document']
     );
 
     $data = $response->getData(true);
@@ -266,7 +266,7 @@ class ApiResponseV3FeaturesTest extends TestCase
     $this->assertEquals(404, $response->getStatusCode());
 
     // Check message
-    $this->assertEquals('Resource not found', $data['message']);
+    $this->assertEquals('Document not found', $data['message']);
 
     // Check errors
     $this->assertArrayHasKey('errors', $data);
@@ -274,7 +274,7 @@ class ApiResponseV3FeaturesTest extends TestCase
 
     // Check custom error code
     $this->assertArrayHasKey('error_code', $data);
-    $this->assertEquals('RESOURCE_NOT_FOUND', $data['error_code']);
+    $this->assertEquals('DOCUMENT_NOT_FOUND', $data['error_code']);
 
     // Check request ID
     $this->assertArrayHasKey('request_id', $data);
@@ -282,7 +282,7 @@ class ApiResponseV3FeaturesTest extends TestCase
 
     // Check context
     $this->assertArrayHasKey('context', $data);
-    $this->assertEquals(['resource_id' => 999, 'resource_type' => 'raindrop'], $data['context']);
+    $this->assertEquals(['resource_id' => 999, 'resource_type' => 'document'], $data['context']);
   }
 
   /**

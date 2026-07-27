@@ -76,18 +76,18 @@ Provide machine-readable error codes for better client-side error handling.
 **Example:**
 ```php
 // Without error code (auto-generated)
-return ApiResponse::error(404, 'Raindrop not found');
+return ApiResponse::error(404, 'Resource not found');
 // Response: "error_code": "NOT_FOUND"
 
 // With custom error code
 return ApiResponse::error(
     404,
-    'Raindrop not found',
+    'Resource not found',
     [],
     [],
-    'RAINDROP_NOT_FOUND'  // Custom machine-readable code
+    'RESOURCE_NOT_FOUND'  // Custom machine-readable code
 );
-// Response: "error_code": "RAINDROP_NOT_FOUND"
+// Response: "error_code": "RESOURCE_NOT_FOUND"
 ```
 
 **Use Cases:**
@@ -118,12 +118,12 @@ Add additional debugging information that's only visible in debug mode.
 ```php
 return ApiResponse::error(
     404,
-    'Raindrop not found',
+    'Resource not found',
     [],
     [],
-    'RAINDROP_NOT_FOUND',
+    'RESOURCE_NOT_FOUND',
     [
-        'raindrop_id' => 12345,
+        'resource_id' => 12345,
         'user_id' => 67890,
         'collection_id' => -1,
         'search_query' => 'Laravel tutorials'
@@ -132,7 +132,7 @@ return ApiResponse::error(
 
 // In debug mode (APP_DEBUG=true):
 // "context": {
-//     "raindrop_id": 12345,
+//     "resource_id": 12345,
 //     "user_id": 67890,
 //     "collection_id": -1,
 //     "search_query": "Laravel tutorials"
@@ -185,13 +185,13 @@ return ApiResponse::serviceUnavailable(
 **Smart Client Implementation:**
 ```javascript
 // JavaScript client example
-fetch('/api/raindrops')
+fetch('/api/v1/stream/events')
     .then(response => {
         if (response.status === 429 || response.status === 503) {
             const retryAfter = response.headers.get('Retry-After');
             console.log(`Retry after ${retryAfter} seconds`);
             // Schedule retry
-            setTimeout(() => fetch('/api/raindrops'), retryAfter * 1000);
+            setTimeout(() => fetch('/api/v1/stream/events'), retryAfter * 1000);
         }
         return response.json();
     });
