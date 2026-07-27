@@ -12,7 +12,7 @@ if (!function_exists('apiResponse')) {
      * 3. Everything else → Data (200 OK) - null, bool, invalid ints, etc.
      *
      * **Collision Zone Protection:**
-     * Even if a Raindrop collection has ID 404, this helper will NEVER send a
+     * Even if a Resource collection has ID 404, this helper will NEVER send a
      * "Not Found" error because object/array type-hints take precedence.
      *
      * **Performance:**
@@ -26,7 +26,7 @@ if (!function_exists('apiResponse')) {
      * // Protected Zone - Objects/Arrays always data
      * return apiResponse($user);                    // Object → 200 OK
      * return apiResponse(['id' => 404]);            // Array → 200 OK (NOT 404!)
-     * return apiResponse($raindropCollection);      // Even if id=404
+     * return apiResponse($resourceCollection);      // Even if id=404
      *
      * // Valid HTTP codes
      * return apiResponse(201, $resource);           // 201 Created

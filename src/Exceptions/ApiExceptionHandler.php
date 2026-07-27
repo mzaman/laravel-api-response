@@ -90,7 +90,7 @@ class ApiExceptionHandler extends ExceptionHandler
                 $exception instanceof \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException =>
                 $this->serviceUnavailableException($exception),
 
-                // Application-level exceptions with getStatusCode() (e.g., raindrop-server BaseException)
+                // Application-level exceptions with getStatusCode() (e.g., api-gateway BaseException)
                 // This catches any exception that provides its own HTTP status code
                 method_exists($exception, 'getStatusCode') && method_exists($exception, 'getErrors') =>
                 $this->applicationException($exception),
@@ -206,7 +206,7 @@ class ApiExceptionHandler extends ExceptionHandler
         );
     }
 
-    // Handle application-level exceptions (e.g., raindrop-server BaseException subclasses)
+    // Handle application-level exceptions (e.g., api-gateway BaseException subclasses)
     // Any exception that implements getStatusCode() and getErrors() methods
     private function applicationException($exception)
     {
