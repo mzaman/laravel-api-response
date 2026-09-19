@@ -66,18 +66,25 @@ class BaseResponse extends JsonResource
     {
         $responseArray = [
             'success' => $this->success,
-            'status' => $this->status,
-            'code' => $this->code,
+            'status'  => $this->status,
+            'code'    => $this->code,
             'message' => $this->message,
-            'data' => $this->data,
-            'locale' => $this->locale,
+            'data'    => $this->data,
+            'locale'  => $this->locale,
         ];
 
         // Include errors, error_type, and error_code only if it's an error response
         if (!HttpResponse::isSuccess($this->code)) {
-            $responseArray['errors'] = $this->errors;
+            $responseArray['errors']     = $this->errors;
             $responseArray['error_type'] = $this->error_type;
             $responseArray['error_code'] = $this->error_code;
+        }
+
+        // Pass through V3 dynamic keys set by ApiResponse (meta, request_id, context)
+        foreach (['meta', 'request_id', 'context'] as $key) {
+            if (isset($this->resource[$key])) {
+                $responseArray[$key] = $this->resource[$key];
+            }
         }
 
         return $responseArray;
