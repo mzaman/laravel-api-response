@@ -31,8 +31,7 @@ class ApiResponseV3FeaturesTest extends TestCase
    */
   public function test_request_id_is_included_in_success_response()
   {
-    // Simulate request with X-Request-ID header
-    $this->app['request']->headers->set('X-Request-ID', 'test-request-123');
+    request()->headers->set('X-Request-ID', 'test-request-123');
 
     $response = $this->apiResponse->success(['data' => 'test'], 200, 'Success');
     $data = $response->getData(true);
@@ -47,7 +46,7 @@ class ApiResponseV3FeaturesTest extends TestCase
    */
   public function test_request_id_is_included_in_error_response()
   {
-    $this->app['request']->headers->set('X-Request-ID', 'error-request-456');
+    request()->headers->set('X-Request-ID', 'error-request-456');
 
     $response = $this->apiResponse->error(404, 'Not found');
     $data = $response->getData(true);
@@ -249,7 +248,7 @@ class ApiResponseV3FeaturesTest extends TestCase
   public function test_all_features_combined()
   {
     config(['app.debug' => true]);
-    $this->app['request']->headers->set('X-Request-ID', 'combined-test-789');
+    request()->headers->set('X-Request-ID', 'combined-test-789');
 
     $response = $this->apiResponse->error(
       404,
@@ -318,8 +317,9 @@ class ApiResponseV3FeaturesTest extends TestCase
     $data = $response->getData(true);
 
     $this->assertEquals(200, $response->getStatusCode());
-    $this->assertArrayHasKey('result', $data);
-    $this->assertTrue($data['result']);
+    // success() returns: status (string), code, message, data, meta
+    $this->assertArrayHasKey('status', $data);
+    $this->assertEquals('success', $data['status']);
   }
 
   /**

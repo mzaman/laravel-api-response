@@ -2,21 +2,30 @@
 
 namespace Tests;
 
-use MasudZaman\LaravelApiResponse\Http\Resources\BaseResponse;
-use PHPUnit\Framework\TestCase;
+use Orchestra\Testbench\TestCase;
 
 class ApiResponseTest extends TestCase
 {
+    /**
+     * Register the package service provider so helpers and app('api-response') are available.
+     */
+    protected function getPackageProviders($app): array
+    {
+        return [
+            \MasudZaman\LaravelApiResponse\Providers\LaravelApiResponseServiceProvider::class,
+        ];
+    }
+
     public function test_success_response()
     {
-        $response = api_response(['data' => 'Some data'], 'success', 200, 'Data fetched successfully');
+        $response = apiResponse(['data' => 'Some data'], 'Data fetched successfully');
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('Data fetched successfully', $response->getData()->message);
     }
 
     public function test_error_response()
     {
-        $response = api_error('Something went wrong', 'error', 500, ['error' => 'Details of error']);
+        $response = apiError(500, 'Something went wrong', ['error' => 'Details of error']);
         $this->assertEquals(500, $response->getStatusCode());
         $this->assertEquals('Something went wrong', $response->getData()->message);
     }

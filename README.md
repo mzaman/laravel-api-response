@@ -595,6 +595,69 @@ return deletedResponse('Resource deleted successfully');
 
 ---
 
+## Testing
+
+### Run All Tests (inside Docker workspace)
+
+```bash
+docker exec seaport-workspace-1 bash -c \
+  "cd /var/www/packages/mzaman/laravel-api-response && vendor/bin/phpunit --testdox 2>&1"
+```
+
+### Filter by Test Class
+
+```bash
+# Specific class
+docker exec seaport-workspace-1 bash -c \
+  "cd /var/www/packages/mzaman/laravel-api-response && vendor/bin/phpunit --testdox --filter=ApiResponseTest 2>&1"
+
+# Specific method
+docker exec seaport-workspace-1 bash -c \
+  "cd /var/www/packages/mzaman/laravel-api-response && vendor/bin/phpunit --testdox --filter='test_success_response' 2>&1"
+```
+
+### Code Coverage (requires Xdebug 3 in workspace container)
+
+> [!IMPORTANT]
+> Run `docker exec seaport-workspace-1 php -m | grep xdebug` first.
+> If nothing is returned, follow the Xdebug setup.
+
+```bash
+# Text summary
+docker exec seaport-workspace-1 bash -c \
+  "cd /var/www/packages/mzaman/laravel-api-response && XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-text 2>&1"
+
+# HTML report (browse coverage/index.html)
+docker exec seaport-workspace-1 bash -c \
+  "cd /var/www/packages/mzaman/laravel-api-response && XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-html coverage 2>&1"
+```
+
+> [!TIP]
+> Always prefix with `XDEBUG_MODE=coverage` — this overrides the ini setting at runtime
+> and prevents step-debug connection noise without changing any files.
+
+### Fresh Container Xdebug Setup (after first rebuild)
+
+```bash
+# Apply the coverage-only ini directly into the running container
+docker exec seaport-workspace-1 bash -c '
+cat > /etc/php/8.3/cli/conf.d/xdebug.ini << XEOF
+; NOTE: xdebug.so loaded by /etc/php/8.3/cli/conf.d/20-xdebug.ini
+xdebug.mode=coverage
+xdebug.client_host=host.docker.internal
+xdebug.client_port=9003
+xdebug.idekey=vsc
+xdebug.start_with_request=no
+xdebug.cli_color=1
+xdebug.output_dir=/tmp/xdebug
+XEOF'
+
+# Verify
+docker exec seaport-workspace-1 php -r "echo ini_get('xdebug.mode') . PHP_EOL;"
+```
+
+---
+
 ### License
 
 This package is open-sourced software licensed under the **MIT** license.
